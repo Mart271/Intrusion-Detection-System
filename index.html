@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDS - Secure Login</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <div class="nav-brand">
+                🔒 IDS Security Module
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="login-container">
+            <div class="login-box">
+                <h2>🔐 Secure Login</h2>
+                <p>Select your role and enter credentials</p>
+                
+                <div class="alert" id="loginAlert"></div>
+
+                <div class="role-selection">
+                    <div class="role-btn active" onclick="selectRole('user')" id="roleUser">
+                        <div class="icon">👤</div>
+                        <div>User</div>
+                    </div>
+                    <div class="role-btn" onclick="selectRole('analyst')" id="roleAnalyst">
+                        <div class="icon">🔍</div>
+                        <div>Analyst</div>
+                    </div>
+                    <div class="role-btn" onclick="selectRole('admin')" id="roleAdmin">
+                        <div class="icon">⚙️</div>
+                        <div>Admin</div>
+                    </div>
+                </div>
+                
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" required placeholder="Enter username" autocomplete="username">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" required placeholder="Enter password" autocomplete="current-password">
+                        <small>Test password: correct_password</small>
+                    </div>
+
+                    <button type="submit" class="btn" id="loginBtn">Login</button>
+                </form>
+
+                <div class="hint-box">
+                    <strong>Test Credentials:</strong><br>
+                    Username: <strong>testuser</strong><br>
+                    Password: <strong>correct_password</strong><br><br>
+                    <strong>Note:</strong> Select your role above before logging in
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let selectedRole = 'user';
+
+        function selectRole(role) {
+            selectedRole = role;
+            
+            // Update UI
+            document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('role' + role.charAt(0).toUpperCase() + role.slice(1)).classList.add('active');
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const alertDiv = document.getElementById('loginAlert');
+            const loginBtn = document.getElementById('loginBtn');
+
+            if (!username || !password) {
+                showAlert('Username and password are required', 'error');
+                return;
+            }
+
+            // Disable button
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Logging in...';
+
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('Login successful! Redirecting...', 'success');
+                    
+                    // Redirect based on role after 1 second
+                    setTimeout(() => {
+                        if (selectedRole === 'user') {
+                            window.location.href = 'user.html';
+                        } else if (selectedRole === 'analyst') {
+                            window.location.href = 'analyst.html';
+                        } else if (selectedRole === 'admin') {
+                            window.location.href = 'admin.html';
+                        }
+                    }, 1000);
+                } else {
+                    showAlert(data.message, 'error');
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Login';
+                }
+            } catch (error) {
+                showAlert('Connection error: ' + error.message, 'error');
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Login';
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('loginAlert');
+            alertDiv.textContent = message;
+            alertDiv.className = 'alert show ' + type;
+            
+            setTimeout(() => {
+                if (type === 'error') {
+                    alertDiv.classList.remove('show');
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

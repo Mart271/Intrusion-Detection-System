@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDS - Security Analyst Portal</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <div class="nav-brand">
+                🔍 IDS - Security Analyst Portal
+            </div>
+            <ul class="nav-links">
+                <li><button class="logout-btn" onclick="logout()">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="dashboard-header">
+            <h2>Security Analysis Dashboard</h2>
+            <button class="refresh-btn" onclick="loadAnalystData()">🔄 Refresh</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card red">
+                <h3>Critical Alerts</h3>
+                <div class="stat-value" id="criticalCount">0</div>
+            </div>
+            <div class="stat-card red">
+                <h3>High Severity</h3>
+                <div class="stat-value" id="highCount">0</div>
+            </div>
+            <div class="stat-card orange">
+                <h3>Total Alerts</h3>
+                <div class="stat-value" id="totalAlerts">0</div>
+            </div>
+            <div class="stat-card green">
+                <h3>Success Rate</h3>
+                <div class="stat-value" id="successRate">-</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🚨 Active Security Alerts</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Alert Type</th>
+                            <th>User</th>
+                            <th>IP Address</th>
+                            <th>Severity</th>
+                            <th>Time</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="alertsTable">
+                        <tr><td colspan="6" class="empty-state">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Recent Login Attempts</h2>
+            <div class="filter-bar">
+                <input type="text" id="logFilter" placeholder="Filter by username or IP..." onkeyup="filterLogs()">
+                <button class="btn" onclick="exportLogs()">📥 Export Logs</button>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>User</th>
+                            <th>IP Address</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTable">
+                        <tr><td colspan="5" class="empty-state">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="analyst.js"></script>
+</body>
+</html>

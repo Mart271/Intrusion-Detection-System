@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDS - User Portal</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <div class="nav-brand">
+                👤 IDS - User Portal
+            </div>
+            <ul class="nav-links">
+                <li><button class="logout-btn" onclick="logout()">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="dashboard-header">
+            <h2>Your Account Security</h2>
+            <button class="refresh-btn" onclick="loadUserData()">🔄 Refresh</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card green">
+                <h3>Account Status</h3>
+                <div class="stat-value" id="accountStatus">Active</div>
+            </div>
+            <div class="stat-card">
+                <h3>Last Login</h3>
+                <div class="stat-value" id="lastLogin">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Your IP</h3>
+                <div class="stat-value" id="userIP" style="font-size: 1.2rem;">-</div>
+            </div>
+            <div class="stat-card red">
+                <h3>Active Alerts</h3>
+                <div class="stat-value" id="userAlerts">0</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Your Recent Login Activity</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>IP Address</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userHistory">
+                        <tr><td colspan="4" class="empty-state">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>💡 Security Tips</h2>
+            <div class="tips">
+                <p>✓ Use strong passwords with uppercase, lowercase, numbers, and special characters</p>
+                <p>✓ Monitor your login activity regularly for suspicious attempts</p>
+                <p>✓ Report any unauthorized access to your administrator immediately</p>
+                <p>✓ Keep your device and software updated with latest security patches</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="user.js"></script>
+</body>
+</html>

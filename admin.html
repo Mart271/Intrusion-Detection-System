@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDS - Admin Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <div class="nav-brand">
+                ⚙️ IDS - Admin Dashboard
+            </div>
+            <ul class="nav-links">
+                <li><button class="logout-btn" onclick="logout()">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="dashboard-header">
+            <h2>System Administration</h2>
+            <button class="refresh-btn" onclick="loadAdminData()">🔄 Refresh</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Logins</h3>
+                <div class="stat-value" id="totalLogins">-</div>
+            </div>
+            <div class="stat-card red">
+                <h3>Failed Attempts</h3>
+                <div class="stat-value" id="failedAttempts">-</div>
+            </div>
+            <div class="stat-card orange">
+                <h3>Blocked IPs</h3>
+                <div class="stat-value" id="blockedIPs">-</div>
+            </div>
+            <div class="stat-card red">
+                <h3>Locked Users</h3>
+                <div class="stat-value" id="lockedUsers">-</div>
+            </div>
+            <div class="stat-card orange">
+                <h3>Active Alerts</h3>
+                <div class="stat-value" id="activeAlerts">-</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🚫 IP Address Management</h2>
+            <div class="management-form">
+                <div class="form-group">
+                    <label>IP Address</label>
+                    <input type="text" id="ipAddress" placeholder="192.168.1.100">
+                </div>
+                <button class="btn" onclick="blockIP()">Block IP</button>
+                <button class="btn secondary" onclick="unblockIP()">Unblock IP</button>
+            </div>
+            <div class="alert" id="ipAlert"></div>
+        </div>
+
+        <div class="section">
+            <h2>🔒 Account Management</h2>
+            <div class="management-form">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="username" placeholder="testuser">
+                </div>
+                <button class="btn" onclick="lockAccount()">Lock Account</button>
+                <button class="btn secondary" onclick="unlockAccount()">Unlock Account</button>
+            </div>
+            <div class="alert" id="accountAlert"></div>
+        </div>
+
+        <div class="section">
+            <h2>⚙️ System Configuration</h2>
+            <div class="config-form">
+                <div class="form-group">
+                    <label>Max Failed Attempts</label>
+                    <input type="number" id="maxFailed" value="3" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Time Window (seconds)</label>
+                    <input type="number" id="timeWindow" value="120" min="30">
+                </div>
+                <div class="form-group">
+                    <label>Lockout Duration (seconds)</label>
+                    <input type="number" id="lockoutDuration" value="900" min="60">
+                </div>
+                <div class="form-group">
+                    <label>Cooldown Period (seconds)</label>
+                    <input type="number" id="cooldownPeriod" value="600" min="60">
+                </div>
+            </div>
+            <button class="btn" style="margin-top: 1rem;" onclick="saveConfig()">💾 Save Configuration</button>
+            <div class="alert" id="configAlert"></div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Current System Settings</h2>
+            <div class="settings-display" id="currentSettings">
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📥 Export & Reports</h2>
+            <div class="management-form">
+                <button class="btn" onclick="exportForensic()">Export Forensic Logs</button>
+                <button class="btn" onclick="exportAlerts()">Export Alerts Report</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
