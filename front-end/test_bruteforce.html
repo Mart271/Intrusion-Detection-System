@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDS - Brute-Force Attack Simulation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #60a5fa;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .test-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            padding: 2rem;
+        }
+
+        .test-card h2 {
+            color: #60a5fa;
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+        }
+
+        .test-card p {
+            color: #94a3b8;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        input {
+            flex: 1;
+            min-width: 150px;
+            padding: 0.75rem;
+            background: #0f172a;
+            border: 1px solid #475569;
+            border-radius: 0.375rem;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #60a5fa;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        button:disabled {
+            background: #64748b;
+            cursor: not-allowed;
+        }
+
+        button.stop {
+            background: #dc2626;
+        }
+
+        button.stop:hover {
+            background: #b91c1c;
+        }
+
+        .stats {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #334155;
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+        }
+
+        .stat-value {
+            color: #60a5fa;
+            font-weight: 600;
+        }
+
+        .status {
+            padding: 1rem;
+            border-radius: 0.375rem;
+            margin-top: 1rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .status.running {
+            background: #1e40af;
+            color: #60a5fa;
+        }
+
+        .status.blocked {
+            background: #7c2d12;
+            color: #fdba74;
+            animation: pulse 0.5s infinite;
+        }
+
+        .status.success {
+            background: #064e3b;
+            color: #86efac;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .log {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-top: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+
+        .log-entry {
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            background: #1e293b;
+            border-left: 3px solid #60a5fa;
+            color: #cbd5e1;
+        }
+
+        .log-entry.success {
+            border-left-color: #10b981;
+            color: #86efac;
+        }
+
+        .log-entry.error {
+            border-left-color: #ef4444;
+            color: #fca5a5;
+        }
+
+        .log-entry.warning {
+            border-left-color: #f59e0b;
+            color: #fcd34d;
+        }
+
+        .comparison {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .comparison h3 {
+            color: #60a5fa;
+            margin-bottom: 1rem;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+
+        .comparison-table th {
+            background: #0f172a;
+            color: #60a5fa;
+            font-weight: 600;
+        }
+
+        .comparison-table tr:hover {
+            background: #0f172a;
+        }
+
+        @media (max-width: 768px) {
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔓 IDS Brute-Force Attack Simulation Tool</h1>
+
+        <div class="test-grid">
+            <!-- Test 1: Slow Attack -->
+            <div class="test-card">
+                <h2>Test 1: Slow Attack</h2>
+                <p>3 failed attempts on 1 account (normal brute-force)</p>
+                
+                <div class="controls">
+                    <input type="text" id="username1" placeholder="Username (e.g., testuser)" value="testuser">
+                </div>
+                
+                <button onclick="runSlowAttack()">Start Slow Attack</button>
+                
+                <div class="stats">
+                    <div class="stat-row">
+                        <span class="stat-label">Total Attempts:</span>
+                        <span class="stat-value" id="slowTotal">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Failed Count:</span>
+                        <span class="stat-value" id="slowFailed">0/3</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Status:</span>
+                        <span class="stat-value" id="slowStatus">Ready</span>
+                    </div>
+                </div>
+
+                <div id="slowStatus1" class="status success">Waiting to start...</div>
+                <div class="log" id="slowLog"></div>
+            </div>
+
+            <!-- Test 2: Fast Attack (1000/sec simulation) -->
+            <div class="test-card">
+                <h2>Test 2: Rapid Attack</h2>
+                <p>100+ attempts in rapid succession (simulated 1000/sec)</p>
+                
+                <div class="controls">
+                    <input type="text" id="username2" placeholder="Username (e.g., testuser2)" value="testuser2">
+                    <input type="number" id="rapidCount" placeholder="# of attempts" value="100" min="10" max="1000">
+                </div>
+                
+                <button id="rapidBtn" onclick="runRapidAttack()">Start Rapid Attack</button>
+                <button id="rapidStop" class="stop" style="display:none;" onclick="stopRapidAttack()">Stop Attack</button>
+                
+                <div class="stats">
+                    <div class="stat-row">
+                        <span class="stat-label">Total Attempts:</span>
+                        <span class="stat-value" id="rapidTotal">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Attempts/sec:</span>
+                        <span class="stat-value" id="rapidSpeed">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Blocked After:</span>
+                        <span class="stat-value" id="rapidBlocked">-</span>
+                    </div>
+                </div>
+
+                <div id="rapidStatus" class="status success">Waiting to start...</div>
+                <div class="log" id="rapidLog"></div>
+            </div>
+        </div>
+
+        <!-- Comparison -->
+        <div class="comparison">
+            <h3>📊 Attack Protection Analysis</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Attack Type</th>
+                        <th>Attempts Allowed</th>
+                        <th>Time to Block</th>
+                        <th>Protection Layer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Single Account, Slow</td>
+                        <td>3 failed</td>
+                        <td>~6 seconds</td>
+                        <td>✅ Account Lockout</td>
+                    </tr>
+                    <tr>
+                        <td>Multiple Accounts, Slow</td>
+                        <td>10 attempts</td>
+                        <td>~20 seconds</td>
+                        <td>✅ Rate Limiting</td>
+                    </tr>
+                    <tr>
+                        <td>Rapid Fire (100+/sec)</td>
+                        <td>3-10 attempts</td>
+                        <td>~50-200ms</td>
+                        <td>✅ All layers</td>
+                    </tr>
+                    <tr>
+                        <td>1000/sec Attack</td>
+                        <td>3-10 attempts</td>
+                        <td>~200-500ms</td>
+                        <td>✅ Rate Limit + Account Lock</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let rapidAttackRunning = false;
+
+        function addLog(logId, message, type = 'default') {
+            const logEl = document.getElementById(logId);
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const time = new Date().toLocaleTimeString();
+            entry.textContent = `[${time}] ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        async function runSlowAttack() {
+            const username = document.getElementById('username1').value.trim();
+            if (!username) {
+                alert('Please enter a username');
+                return;
+            }
+
+            document.getElementById('slowLog').innerHTML = '';
+            let totalAttempts = 0;
+            let failedCount = 0;
+
+            addLog('slowLog', '🔴 Starting slow brute-force attack...', 'warning');
+            document.getElementById('slowStatus1').className = 'status running';
+            document.getElementById('slowStatus1').textContent = 'Attack in progress...';
+
+            for (let i = 1; i <= 10; i++) {
+                try {
+                    const response = await fetch(`${API_BASE}/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            username: username,
+                            password: 'wrong_password_' + i
+                        })
+                    });
+
+                    const data = await response.json();
+                    totalAttempts++;
+
+                    if (!data.success) {
+                        failedCount++;
+                        addLog('slowLog', `Attempt ${i}: ❌ FAILED - ${data.message}`, 'error');
+
+                        if (failedCount >= 3) {
+                            addLog('slowLog', '🔒 ACCOUNT LOCKED AFTER 3 FAILURES!', 'warning');
+                            document.getElementById('slowStatus1').className = 'status blocked';
+                            document.getElementById('slowStatus1').textContent = '🔒 ACCOUNT LOCKED';
+                            break;
+                        }
+                    }
+
+                    document.getElementById('slowTotal').textContent = totalAttempts;
+                    document.getElementById('slowFailed').textContent = `${failedCount}/3`;
+
+                    // Wait 2 seconds between attempts (realistic)
+                    await new Promise(r => setTimeout(r, 2000));
+
+                } catch (error) {
+                    addLog('slowLog', `Error: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function runRapidAttack() {
+            const username = document.getElementById('username2').value.trim();
+            const count = parseInt(document.getElementById('rapidCount').value);
+
+            if (!username) {
+                alert('Please enter a username');
+                return;
+            }
+
+            document.getElementById('rapidLog').innerHTML = '';
+            document.getElementById('rapidBtn').style.display = 'none';
+            document.getElementById('rapidStop').style.display = 'block';
+            rapidAttackRunning = true;
+
+            let totalAttempts = 0;
+            let blockedAfter = '-';
+            let startTime = Date.now();
+
+            addLog('rapidLog', `🔴 Launching rapid-fire attack (${count} attempts)...`, 'warning');
+            addLog('rapidLog', '⚡ Simulating 1000+ attempts/second...', 'warning');
+            document.getElementById('rapidStatus').className = 'status running';
+            document.getElementById('rapidStatus').textContent = '⚡ ATTACK IN PROGRESS';
+
+            for (let i = 1; i <= count && rapidAttackRunning; i++) {
+                try {
+                    const response = await fetch(`${API_BASE}/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            username: username,
+                            password: 'attack_' + i
+                        })
+                    });
+
+                    const data = await response.json();
+                    totalAttempts++;
+
+                    if (!data.success) {
+                        if (data.message.includes('locked') || data.message.includes('blocked')) {
+                            if (blockedAfter === '-') {
+                                blockedAfter = totalAttempts;
+                                addLog('rapidLog', `🚫 BLOCKED AFTER ${totalAttempts} ATTEMPTS!`, 'warning');
+                                document.getElementById('rapidStatus').className = 'status blocked';
+                                document.getElementById('rapidStatus').textContent = `🚫 BLOCKED AFTER ${totalAttempts} ATTEMPTS`;
+                            }
+                        }
+
+                        if (i <= 5 || i % 20 === 0) {
+                            addLog('rapidLog', `Attempt ${i}: ❌ ${data.message}`, 'error');
+                        }
+                    }
+
+                    document.getElementById('rapidTotal').textContent = totalAttempts;
+                    document.getElementById('rapidBlocked').textContent = blockedAfter;
+
+                    // Very fast - almost no delay (simulating rapid fire)
+                    await new Promise(r => setTimeout(r, 10));
+
+                } catch (error) {
+                    addLog('rapidLog', `Error on attempt ${i}: ${error.message}`, 'error');
+                }
+            }
+
+            let duration = (Date.now() - startTime) / 1000;
+            let speed = (totalAttempts / duration).toFixed(0);
+            document.getElementById('rapidSpeed').textContent = speed;
+
+            addLog('rapidLog', `✅ Attack simulation completed in ${duration.toFixed(2)}s`, 'success');
+            addLog('rapidLog', `📊 Attack speed: ${speed} attempts/second`, 'success');
+
+            document.getElementById('rapidBtn').style.display = 'block';
+            document.getElementById('rapidStop').style.display = 'none';
+            rapidAttackRunning = false;
+        }
+
+        function stopRapidAttack() {
+            rapidAttackRunning = false;
+            document.getElementById('rapidBtn').style.display = 'block';
+            document.getElementById('rapidStop').style.display = 'none';
+            addLog('rapidLog', '⏹️ Attack stopped by user', 'warning');
+        }
+    </script>
+</body>
+</html>

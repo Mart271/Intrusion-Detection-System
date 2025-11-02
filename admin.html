@@ -21,7 +21,16 @@
     <div class="container">
         <div class="dashboard-header">
             <h2>System Administration</h2>
-            <button class="refresh-btn" onclick="loadAdminData()">🔄 Refresh</button>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <button class="refresh-btn" onclick="loadAdminData()">🔄 Manual Refresh</button>
+                <div id="refreshStatus" style="color: #60a5fa; font-weight: 600; font-size: 0.9rem;">🟢 Auto-Refresh: ON (500ms)</div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="refresh-btn" style="padding: 0.5rem 1rem; font-size: 0.85rem;" onclick="setRefreshSpeed(300)">⚡ Fast</button>
+                    <button class="refresh-btn" style="padding: 0.5rem 1rem; font-size: 0.85rem;" onclick="setRefreshSpeed(500)">Normal</button>
+                    <button class="refresh-btn" style="padding: 0.5rem 1rem; font-size: 0.85rem;" onclick="setRefreshSpeed(1000)">Slow</button>
+                    <button class="refresh-btn danger" style="padding: 0.5rem 1rem; font-size: 0.85rem; background: #dc2626;" onclick="stopAutoRefresh()">Stop</button>
+                </div>
+            </div>
         </div>
 
         <div class="stats-grid">
@@ -45,6 +54,10 @@
                 <h3>Active Alerts</h3>
                 <div class="stat-value" id="activeAlerts">-</div>
             </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h3>Rate Limited IPs</h3>
+                <div class="stat-value" id="rateLimitedIPs">-</div>
+            </div>
         </div>
 
         <div class="section">
@@ -61,7 +74,7 @@
         </div>
 
         <div class="section">
-            <h2>🔒 Account Management</h2>
+            <h2>🔐 Account Management</h2>
             <div class="management-form">
                 <div class="form-group">
                     <label>Username</label>
@@ -91,6 +104,14 @@
                 <div class="form-group">
                     <label>Cooldown Period (seconds)</label>
                     <input type="number" id="cooldownPeriod" value="600" min="60">
+                </div>
+                <div class="form-group">
+                    <label>Max Attempts Per IP</label>
+                    <input type="number" id="maxAttemptsPerIP" value="100" min="5">
+                </div>
+                <div class="form-group">
+                    <label>IP Rate Limit Window (seconds)</label>
+                    <input type="number" id="ipRateLimitWindow" value="60" min="30">
                 </div>
             </div>
             <button class="btn" style="margin-top: 1rem;" onclick="saveConfig()">💾 Save Configuration</button>
@@ -146,7 +167,7 @@
         </div>
 
         <div class="section">
-            <h2>🔒 Currently Locked Accounts</h2>
+            <h2>🔐 Currently Locked Accounts</h2>
             <div class="table-container">
                 <table>
                     <thead>

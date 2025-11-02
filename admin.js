@@ -7,15 +7,29 @@ function logout() {
 
 async function loadAdminData() {
     try {
-        // Fetch statistics
+        // Fetch statistics from backend
         const statsRes = await fetch(`${API_BASE}/dashboard/stats`);
         const stats = await statsRes.json();
 
-        document.getElementById('totalLogins').textContent = stats.total_logins;
-        document.getElementById('failedAttempts').textContent = stats.failed_attempts;
-        document.getElementById('blockedIPs').textContent = stats.blocked_ips;
-        document.getElementById('lockedUsers').textContent = stats.locked_users;
-        document.getElementById('activeAlerts').textContent = stats.active_alerts;
+        // Update all stats - these come from database
+        document.getElementById('totalLogins').textContent = stats.total_logins || 0;
+        document.getElementById('failedAttempts').textContent = stats.failed_attempts || 0;
+        document.getElementById('blockedIPs').textContent = stats.blocked_ips || 0;
+        document.getElementById('lockedUsers').textContent = stats.locked_users || 0;
+        document.getElementById('activeAlerts').textContent = stats.active_alerts || 0;
+        document.getElementById('rateLimitedIPs').textContent = stats.rate_limited_ips || 0;
+
+        // Add visual alert if many failed attempts
+        const failedEl = document.getElementById('failedAttempts');
+        if (stats.failed_attempts > 20) {
+            failedEl.style.color = '#ef4444';
+            failedEl.style.animation = 'pulse 0.5s infinite';
+        } else if (stats.failed_attempts > 10) {
+            failedEl.style.color = '#fb923c';
+        } else {
+            failedEl.style.color = '#60a5fa';
+            failedEl.style.animation = 'none';
+        }
 
         // Load configuration
         loadConfig();
@@ -90,8 +104,8 @@ async function loadUsersTable() {
                     <td>${new Date(user.lastAttempt).toLocaleString()}</td>
                     <td><span class="${statusClass}">${statusText}</span></td>
                     <td>
-                        <button class="btn" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;" onclick="blockIP('${user.ip}')">Block IP</button>
-                        <button class="btn danger" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;" onclick="lockAccount('${user.username}')">Lock User</button>
+                        <button class="btn" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;" onclick="blockIPFromTable('${user.ip}')">Block IP</button>
+                        <button class="btn danger" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;" onclick="lockAccountFromTable('${user.username}')">Lock User</button>
                     </td>
                 </tr>
             `;
@@ -200,12 +214,16 @@ async function loadConfig() {
         document.getElementById('timeWindow').value = config.failed_attempts_window;
         document.getElementById('lockoutDuration').value = config.lockout_duration;
         document.getElementById('cooldownPeriod').value = config.cooldown_period;
+        document.getElementById('maxAttemptsPerIP').value = config.max_attempts_per_ip || 10;
+        document.getElementById('ipRateLimitWindow').value = config.ip_rate_limit_window || 60;
 
         document.getElementById('currentSettings').innerHTML = `
             <p><strong>Max Failed Attempts:</strong> ${config.max_failed_attempts}</p>
             <p><strong>Time Window:</strong> ${config.failed_attempts_window}s (${Math.round(config.failed_attempts_window/60)} min)</p>
             <p><strong>Lockout Duration:</strong> ${config.lockout_duration}s (${Math.round(config.lockout_duration/60)} min)</p>
             <p><strong>Cooldown Period:</strong> ${config.cooldown_period}s (${Math.round(config.cooldown_period/60)} min)</p>
+            <p><strong>Max Attempts Per IP:</strong> ${config.max_attempts_per_ip || 10}</p>
+            <p><strong>IP Rate Limit Window:</strong> ${config.ip_rate_limit_window || 60}s (${Math.round((config.ip_rate_limit_window || 60)/60)} min)</p>
         `;
     } catch (error) {
         console.error('Error loading config:', error);
@@ -239,6 +257,11 @@ async function blockIP() {
     }
 }
 
+async function blockIPFromTable(ip) {
+    document.getElementById('ipAddress').value = ip;
+    blockIP();
+}
+
 async function unblockIP() {
     const ip = document.getElementById('ipAddress').value.trim();
     
@@ -263,6 +286,26 @@ async function unblockIP() {
         }
     } catch (error) {
         showAlert('ipAlert', 'Error: ' + error.message, 'error');
+    }
+}
+
+async function quickUnblockIP(ip) {
+    if (!ip) {
+        alert('No IP provided');
+        return;
+    }
+    try {
+        const res = await fetch(`${API_BASE}/admin/unblock-ip`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ip})
+        });
+        
+        const data = await res.json();
+        alert(data.message);
+        loadAdminData();
+    } catch (error) {
+        alert('Error: ' + error.message);
     }
 }
 
@@ -293,6 +336,11 @@ async function lockAccount() {
     }
 }
 
+async function lockAccountFromTable(username) {
+    document.getElementById('username').value = username;
+    lockAccount();
+}
+
 async function unlockAccount() {
     const username = document.getElementById('username').value.trim();
     
@@ -320,13 +368,35 @@ async function unlockAccount() {
     }
 }
 
+async function quickUnlockAccount(username) {
+    if (!username) {
+        alert('No username provided');
+        return;
+    }
+    try {
+        const res = await fetch(`${API_BASE}/admin/unlock-account`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({username})
+        });
+        
+        const data = await res.json();
+        alert(data.message);
+        loadAdminData();
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
 async function saveConfig() {
     try {
         const config = {
             max_failed_attempts: parseInt(document.getElementById('maxFailed').value),
             failed_attempts_window: parseInt(document.getElementById('timeWindow').value),
             lockout_duration: parseInt(document.getElementById('lockoutDuration').value),
-            cooldown_period: parseInt(document.getElementById('cooldownPeriod').value)
+            cooldown_period: parseInt(document.getElementById('cooldownPeriod').value),
+            max_attempts_per_ip: parseInt(document.getElementById('maxAttemptsPerIP').value),
+            ip_rate_limit_window: parseInt(document.getElementById('ipRateLimitWindow').value)
         };
 
         const res = await fetch(`${API_BASE}/config`, {
@@ -358,8 +428,38 @@ function showAlert(id, message, type) {
     setTimeout(() => el.classList.remove('show'), 3000);
 }
 
-// Initial load
-window.addEventListener('load', loadAdminData);
+// Auto-refresh speed (in milliseconds)
+let refreshInterval = 500;  // 0.5 seconds for live updates
+let refreshTimerId = null;
 
-// Auto-refresh every 3 seconds
-setInterval(loadAdminData, 3000);
+function startAutoRefresh() {
+    if (!refreshTimerId) {
+        refreshTimerId = setInterval(loadAdminData, refreshInterval);
+        document.getElementById('refreshStatus').innerHTML = '🟢 Auto-Refresh: ON (500ms)';
+    }
+}
+
+function stopAutoRefresh() {
+    if (refreshTimerId) {
+        clearInterval(refreshTimerId);
+        refreshTimerId = null;
+        document.getElementById('refreshStatus').innerHTML = '🔴 Auto-Refresh: OFF';
+    }
+}
+
+function setRefreshSpeed(speed) {
+    refreshInterval = speed;
+    if (refreshTimerId) {
+        stopAutoRefresh();
+        startAutoRefresh();
+    }
+    const speedLabel = speed === 300 ? 'Fast (300ms)' : speed === 500 ? 'Normal (500ms)' : 'Slow (1s)';
+    document.getElementById('refreshStatus').innerHTML = `🟢 Auto-Refresh: ${speedLabel}`;
+}
+
+// Initial load
+window.addEventListener('load', () => {
+    loadAdminData();
+    startAutoRefresh();
+    document.getElementById('refreshStatus').innerHTML = '🟢 Auto-Refresh: ON (500ms)';
+});
