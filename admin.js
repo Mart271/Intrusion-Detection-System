@@ -19,8 +19,175 @@ async function loadAdminData() {
 
         // Load configuration
         loadConfig();
+        
+        // Load users with failed attempts
+        loadUsersTable();
+        
+        // Load blocked IPs
+        loadBlockedIPsTable();
+        
+        // Load locked accounts
+        loadLockedAccountsTable();
     } catch (error) {
         console.error('Error loading admin data:', error);
+    }
+}
+
+async function loadUsersTable() {
+    try {
+        const res = await fetch(`${API_BASE}/dashboard/login-history?limit=100`);
+        const data = await res.json();
+        const history = data.history || [];
+
+        // Group by username and count failed attempts
+        const userStats = {};
+        
+        history.forEach(entry => {
+            if (!userStats[entry.username]) {
+                userStats[entry.username] = {
+                    username: entry.username,
+                    ip: entry.ip_address,
+                    failed: 0,
+                    success: 0,
+                    lastAttempt: entry.timestamp,
+                    status: 'active'
+                };
+            }
+            
+            if (entry.status === 'failed') {
+                userStats[entry.username].failed++;
+            } else {
+                userStats[entry.username].success++;
+            }
+            
+            // Keep most recent timestamp
+            if (new Date(entry.timestamp) > new Date(userStats[entry.username].lastAttempt)) {
+                userStats[entry.username].lastAttempt = entry.timestamp;
+                userStats[entry.username].ip = entry.ip_address;
+            }
+        });
+
+        const tbody = document.getElementById('usersTable');
+        const users = Object.values(userStats);
+        
+        if (users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No user activity</td></tr>';
+            return;
+        }
+
+        // Sort by failed attempts (highest first)
+        users.sort((a, b) => b.failed - a.failed);
+
+        tbody.innerHTML = users.map(user => {
+            const statusClass = user.failed >= 3 ? 'status-failed' : 'status-success';
+            const statusText = user.failed >= 3 ? 'SUSPICIOUS' : 'NORMAL';
+            
+            return `
+                <tr>
+                    <td>${user.username}</td>
+                    <td>${user.ip}</td>
+                    <td><strong style="color: ${user.failed >= 3 ? '#f87171' : '#4ade80'}">${user.failed}</strong></td>
+                    <td>${new Date(user.lastAttempt).toLocaleString()}</td>
+                    <td><span class="${statusClass}">${statusText}</span></td>
+                    <td>
+                        <button class="btn" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;" onclick="blockIP('${user.ip}')">Block IP</button>
+                        <button class="btn danger" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;" onclick="lockAccount('${user.username}')">Lock User</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error loading users table:', error);
+    }
+}
+
+async function loadBlockedIPsTable() {
+    try {
+        const res = await fetch(`${API_BASE}/dashboard/login-history?limit=200`);
+        const data = await res.json();
+        const history = data.history || [];
+
+        // Get IPs with multiple failed attempts (simulating blocked IPs)
+        const ipStats = {};
+        
+        history.forEach(entry => {
+            if (!ipStats[entry.ip_address]) {
+                ipStats[entry.ip_address] = {
+                    ip: entry.ip_address,
+                    users: new Set(),
+                    failed: 0,
+                    firstSeen: entry.timestamp
+                };
+            }
+            
+            ipStats[entry.ip_address].users.add(entry.username);
+            if (entry.status === 'failed') {
+                ipStats[entry.ip_address].failed++;
+            }
+        });
+
+        const tbody = document.getElementById('blockedIPsTable');
+        const suspiciousIPs = Object.values(ipStats).filter(ip => ip.failed >= 5);
+        
+        if (suspiciousIPs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No blocked IPs</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = suspiciousIPs.map(ip => `
+            <tr>
+                <td>${ip.ip}</td>
+                <td>${Array.from(ip.users).join(', ')}</td>
+                <td><strong style="color: #f87171">${ip.failed}</strong></td>
+                <td>${new Date(ip.firstSeen).toLocaleString()}</td>
+                <td>
+                    <button class="btn secondary" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;" onclick="quickUnblockIP('${ip.ip}')">Unblock</button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading blocked IPs:', error);
+    }
+}
+
+async function loadLockedAccountsTable() {
+    try {
+        const alertsRes = await fetch(`${API_BASE}/dashboard/alerts?limit=50`);
+        const alertsData = await alertsRes.json();
+        const alerts = alertsData.alerts || [];
+
+        // Filter for lockout alerts
+        const lockedAccounts = alerts.filter(a => 
+            a.alert_type === 'BRUTE_FORCE_ATTACK' || 
+            a.alert_type === 'MULTIPLE_FAILED_ATTEMPTS'
+        );
+
+        const tbody = document.getElementById('lockedAccountsTable');
+        
+        if (lockedAccounts.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No locked accounts</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = lockedAccounts.slice(0, 10).map(account => {
+            const lockedTime = new Date(account.timestamp);
+            const unlockTime = new Date(lockedTime.getTime() + 15 * 60000); // +15 min
+            
+            return `
+                <tr>
+                    <td>${account.username}</td>
+                    <td>${account.ip_address}</td>
+                    <td>${lockedTime.toLocaleString()}</td>
+                    <td>${unlockTime.toLocaleString()}</td>
+                    <td>Brute-force detected</td>
+                    <td>
+                        <button class="btn secondary" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;" onclick="quickUnlockAccount('${account.username}')">Unlock</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error loading locked accounts:', error);
     }
 }
 

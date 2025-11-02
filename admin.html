@@ -105,6 +105,68 @@
         </div>
 
         <div class="section">
+            <h2>👥 Active Users & Failed Attempts</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>IP Address</th>
+                            <th>Failed Attempts</th>
+                            <th>Last Attempt</th>
+                            <th>Status</th>
+                            <th>Quick Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTable">
+                        <tr><td colspan="6" class="empty-state">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🚫 Currently Blocked IPs</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>IP Address</th>
+                            <th>Associated User</th>
+                            <th>Failed Attempts</th>
+                            <th>Blocked Since</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="blockedIPsTable">
+                        <tr><td colspan="5" class="empty-state">No blocked IPs</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔒 Currently Locked Accounts</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>IP Address</th>
+                            <th>Locked Since</th>
+                            <th>Unlock Time</th>
+                            <th>Reason</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lockedAccountsTable">
+                        <tr><td colspan="6" class="empty-state">No locked accounts</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
             <h2>📥 Export & Reports</h2>
             <div class="management-form">
                 <button class="btn" onclick="exportForensic()">Export Forensic Logs</button>
