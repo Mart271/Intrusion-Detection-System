@@ -9,7 +9,7 @@ from collections import defaultdict
 import os
 import threading
 import time
-
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 CORS(app)
@@ -30,9 +30,7 @@ IDS_CONFIG = {
 }
 
 # In-memory storage
-BLOCKED_IPS = set(
-    
-)
+BLOCKED_IPS = set()
 LOCKED_USERS = {}
 LOGIN_HISTORY = defaultdict(list)
 CUSTOM_RULES = []
@@ -232,7 +230,7 @@ def process_login(username, ip, password_correct):
 
 @app.route('/api/login', methods=['POST'])
 def api_login():
-    """API endpoint for user login attempts"""
+    """API endpoint for user login attempts with password hashing"""
     try:
         data = request.json
         username = data.get('username', '').strip()
@@ -242,8 +240,26 @@ def api_login():
         if not username or not password:
             return jsonify({'success': False, 'message': 'Username and password required'}), 400
         
+        # Get stored password hash from database
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute("SELECT password_hash FROM users WHERE username = ?", (username,))
+        result = c.fetchone()
+        conn.close()
+        
+        if result:
+            stored_hash = result[0]
+            password_correct = check_password_hash(stored_hash, password)
+        else:
+            # Default test user
+            if username == 'testuser':
+                test_hash = generate_password_hash('correct_password')
+                password_correct = check_password_hash(test_hash, password)
+            else:
+                password_correct = False
+        
         # Core IDS processing
-        success, message = process_login(username, ip, password == 'correct_password')
+        success, message = process_login(username, ip, password_correct)
         
         return jsonify({
             'success': success,

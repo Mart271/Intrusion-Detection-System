@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechCorp - Secure Portal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-menu a {
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-menu a:hover {
+            color: #667eea;
+        }
+
+        /* Hero Section */
+        .hero {
+            max-width: 1200px;
+            margin: 4rem auto;
+            padding: 2rem;
+            text-align: center;
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        /* Login Section */
+        .login-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            min-height: 60vh;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .login-image {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .login-image h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .login-image p {
+            text-align: center;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+
+        .security-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .security-badge h3 {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.8;
+        }
+
+        .security-badge .badge-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .login-form-container {
+            padding: 3rem;
+        }
+
+        .login-form-container h2 {
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-size: 2rem;
+        }
+
+        .login-form-container p {
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .feature-item {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+        }
+
+        .feature-item .icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-item p {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .ids-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @media (max-width: 768px) {
+            .login-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .login-image {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">🏢 TechCorp Portal</div>
+            <ul class="nav-menu">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#services">Services</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <h1>Welcome to TechCorp</h1>
+        <p>Secure Employee Portal - Protected by Advanced IDS</p>
+    </div>
+
+    <!-- Login Section -->
+    <div class="login-section">
+        <div class="login-container">
+            <!-- Left Side - Image/Info -->
+            <div class="login-image">
+                <h2>🔒 Secure Login</h2>
+                <p>Your account is protected by our advanced Intrusion Detection System</p>
+                
+                <div class="security-badge">
+                    <h3>SECURITY STATUS</h3>
+                    <div class="badge-text">🛡️ PROTECTED</div>
+                </div>
+
+                <div class="features">
+                    <div class="feature-item">
+                        <div class="icon">🔍</div>
+                        <p>Real-time Monitoring</p>
+                    </div>
+                    <div class="feature-item">
+                        <div class="icon">⚡</div>
+                        <p>Instant Threat Detection</p>
+                    </div>
+                    <div class="feature-item">
+                        <div class="icon">🚫</div>
+                        <p>Brute-Force Protection</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side - Login Form -->
+            <div class="login-form-container">
+                <h2>Sign In</h2>
+                <p>Enter your credentials to access the portal</p>
+
+                <div class="alert" id="loginAlert"></div>
+
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" placeholder="Enter your username" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" placeholder="Enter your password" required>
+                    </div>
+
+                    <button type="submit" class="btn-login" id="loginBtn">
+                        Sign In
+                    </button>
+                </form>
+
+                <div style="margin-top: 1rem; text-align: center; font-size: 0.85rem; color: #666;">
+                    <p>Test Account: <strong>testuser</strong> / <strong>correct_password</strong></p>
+                    <p style="margin-top: 0.5rem;">Protected by IDS Module Extension</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- IDS Status Indicator -->
+    <div class="ids-status">
+        <div class="status-indicator"></div>
+        <span style="font-size: 0.85rem; font-weight: 600;">IDS Active</span>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+
+        async function handleLogin(event) {
+            event.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const alertDiv = document.getElementById('loginAlert');
+            const loginBtn = document.getElementById('loginBtn');
+
+            // Disable button
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Signing in...';
+
+            try {
+                // Call IDS-protected API
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('✓ Login successful! Redirecting to dashboard...', 'success');
+                    
+                    // Simulate redirect to user portal
+                    setTimeout(() => {
+                        window.location.href = 'user.html';
+                    }, 1500);
+                } else {
+                    showAlert('✗ ' + data.message, 'error');
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Sign In';
+                }
+            } catch (error) {
+                showAlert('✗ Connection error. Please try again.', 'error');
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Sign In';
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('loginAlert');
+            alertDiv.textContent = message;
+            alertDiv.className = 'alert show ' + type;
+
+            if (type === 'error') {
+                setTimeout(() => {
+                    alertDiv.classList.remove('show');
+                }, 5000);
+            }
+        }
+
+        // Show IDS protection info on page load
+        window.addEventListener('load', () => {
+            console.log('🔒 This website is protected by IDS Module Extension');
+            console.log('✓ Real-time brute-force detection');
+            console.log('✓ Progressive lockout system');
+            console.log('✓ IP rate limiting');
+            console.log('✓ Distributed attack detection');
+        });
+    </script>
+</body>
+</html>
