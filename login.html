@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureBank - Secure Login</title>
+    <link rel="stylesheet" href="login.css">
+</head>
+<body>
+    <!-- Login Container -->
+    <div class="container" id="loginContainer">
+        <div class="left-panel">
+            <h1>🏦 SecureBank</h1>
+            <p>Access your account securely. Our advanced security systems protect your sensitive financial information 24/7 with real-time IDS protection.</p>
+            <div class="security-features">
+                <p>🔐 256-bit SSL Encryption</p>
+                <p>🛡️ Real-time Intrusion Detection</p>
+                <p>⚡ Brute-Force Protection</p>
+                <p>🔒 Account Lockout System</p>
+                <p>📊 Multi-layer Security Monitoring</p>
+            </div>
+        </div>
+        <div class="right-panel">
+            <div class="login-form">
+                <h2>Welcome Back</h2>
+                <p>Sign in to your account</p>
+                
+                <div class="error-message" id="errorMessage"></div>
+                <div class="success-message" id="successMessage"></div>
+                
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" placeholder="Enter your username" required autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" placeholder="Enter your password" required autocomplete="off">
+                    </div>
+                    <button type="submit" class="login-btn" id="loginBtn">
+                        <span id="btnText">Sign In</span>
+                        <div class="loading" id="btnLoading" style="display: none;"></div>
+                    </button>
+                </form>
+                
+                <div class="attempt-info">
+                    <span>Failed Attempts:</span>
+                    <span class="status-badge" id="attemptBadge">0/3</span>
+                </div>
+                
+                <div style="margin-top: 20px; font-size: 0.85em; color: #999; text-align: center;">
+                    <p>📝 Test Account: <strong>testuser</strong></p>
+                    <p>🔑 Password: <strong>correct_password</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard (Hidden Initially) -->
+    <div class="dashboard" id="dashboard">
+        <div class="dashboard-header">
+            <h1>🏦 SecureBank Dashboard</h1>
+            <p>Welcome, <strong id="loggedUser"></strong></p>
+            <button onclick="logout()" class="logout-btn">Logout</button>
+        </div>
+        
+        <div class="dashboard-content">
+            <div class="dashboard-card">
+                <h2>✅ Login Successful!</h2>
+                <p>Your account is protected by our advanced IDS system.<br>
+                   All login attempts are monitored and logged.<br>
+                   Suspicious activities are automatically detected and blocked.</p>
+                
+                <div class="security-stats">
+                    <div class="stat-box">
+                        <h3>🔐 Security Status</h3>
+                        <p class="stat-value">PROTECTED</p>
+                    </div>
+                    <div class="stat-box">
+                        <h3>📊 IDS Status</h3>
+                        <p class="stat-value">ACTIVE</p>
+                    </div>
+                    <div class="stat-box">
+                        <h3>⚡ Protection</h3>
+                        <p class="stat-value">ENABLED</p>
+                    </div>
+                </div>
+
+                <div class="features-list">
+                    <h3>🎯 Your System Has:</h3>
+                    <ul>
+                        <li>✅ Real-time Brute-Force Detection</li>
+                        <li>✅ Automatic Account Lockout (3 failed attempts)</li>
+                        <li>✅ IP Address Blocking</li>
+                        <li>✅ Rate Limiting (100 attempts per IP)</li>
+                        <li>✅ 2FA with OTP via Email</li>
+                        <li>✅ Forensic Logging & Audit Trail</li>
+                        <li>✅ Admin Dashboard Control</li>
+                        <li>✅ Security Analyst Monitoring</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="login.js"></script>
+</body>
+</html>
