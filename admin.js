@@ -1,441 +1,18 @@
 const API_BASE = 'http://localhost:5000/api';
+let refreshInterval = 5000; // 5 seconds
+let refreshTimerId = null;
 
 function logout() {
-    alert('Logged out successfully');
-    window.location.href = 'index.html';
-}
-
-async function loadAdminData() {
-    try {
-        // Fetch statistics from backend
-        const statsRes = await fetch(`${API_BASE}/dashboard/stats`);
-        const stats = await statsRes.json();
-
-        // Update all stats - these come from database
-        document.getElementById('totalLogins').textContent = stats.total_logins || 0;
-        document.getElementById('failedAttempts').textContent = stats.failed_attempts || 0;
-        document.getElementById('blockedIPs').textContent = stats.blocked_ips || 0;
-        document.getElementById('lockedUsers').textContent = stats.locked_users || 0;
-        document.getElementById('activeAlerts').textContent = stats.active_alerts || 0;
-        document.getElementById('rateLimitedIPs').textContent = stats.rate_limited_ips || 0;
-
-        // Add visual alert if many failed attempts
-        const failedEl = document.getElementById('failedAttempts');
-        if (stats.failed_attempts > 20) {
-            failedEl.style.color = '#ef4444';
-            failedEl.style.animation = 'pulse 0.5s infinite';
-        } else if (stats.failed_attempts > 10) {
-            failedEl.style.color = '#fb923c';
-        } else {
-            failedEl.style.color = '#60a5fa';
-            failedEl.style.animation = 'none';
-        }
-
-        // Load configuration
-        loadConfig();
-        
-        // Load users with failed attempts
-        loadUsersTable();
-        
-        // Load blocked IPs
-        loadBlockedIPsTable();
-        
-        // Load locked accounts
-        loadLockedAccountsTable();
-    } catch (error) {
-        console.error('Error loading admin data:', error);
+    if (confirm('Are you sure you want to logout?')) {
+        window.location.href = 'login.html';
     }
 }
-
-async function loadUsersTable() {
-    try {
-        const res = await fetch(`${API_BASE}/dashboard/login-history?limit=100`);
-        const data = await res.json();
-        const history = data.history || [];
-
-        // Group by username and count failed attempts
-        const userStats = {};
-        
-        history.forEach(entry => {
-            if (!userStats[entry.username]) {
-                userStats[entry.username] = {
-                    username: entry.username,
-                    ip: entry.ip_address,
-                    failed: 0,
-                    success: 0,
-                    lastAttempt: entry.timestamp,
-                    status: 'active'
-                };
-            }
-            
-            if (entry.status === 'failed') {
-                userStats[entry.username].failed++;
-            } else {
-                userStats[entry.username].success++;
-            }
-            
-            // Keep most recent timestamp
-            if (new Date(entry.timestamp) > new Date(userStats[entry.username].lastAttempt)) {
-                userStats[entry.username].lastAttempt = entry.timestamp;
-                userStats[entry.username].ip = entry.ip_address;
-            }
-        });
-
-        const tbody = document.getElementById('usersTable');
-        const users = Object.values(userStats);
-        
-        if (users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No user activity</td></tr>';
-            return;
-        }
-
-        // Sort by failed attempts (highest first)
-        users.sort((a, b) => b.failed - a.failed);
-
-        tbody.innerHTML = users.map(user => {
-            const statusClass = user.failed >= 3 ? 'status-failed' : 'status-success';
-            const statusText = user.failed >= 3 ? 'SUSPICIOUS' : 'NORMAL';
-            
-            return `
-                <tr>
-                    <td>${user.username}</td>
-                    <td>${user.ip}</td>
-                    <td><strong style="color: ${user.failed >= 3 ? '#f87171' : '#4ade80'}">${user.failed}</strong></td>
-                    <td>${new Date(user.lastAttempt).toLocaleString()}</td>
-                    <td><span class="${statusClass}">${statusText}</span></td>
-                    <td>
-                        <button class="btn" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;" onclick="blockIPFromTable('${user.ip}')">Block IP</button>
-                        <button class="btn danger" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;" onclick="lockAccountFromTable('${user.username}')">Lock User</button>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-    } catch (error) {
-        console.error('Error loading users table:', error);
-    }
-}
-
-async function loadBlockedIPsTable() {
-    try {
-        const res = await fetch(`${API_BASE}/dashboard/login-history?limit=200`);
-        const data = await res.json();
-        const history = data.history || [];
-
-        // Get IPs with multiple failed attempts (simulating blocked IPs)
-        const ipStats = {};
-        
-        history.forEach(entry => {
-            if (!ipStats[entry.ip_address]) {
-                ipStats[entry.ip_address] = {
-                    ip: entry.ip_address,
-                    users: new Set(),
-                    failed: 0,
-                    firstSeen: entry.timestamp
-                };
-            }
-            
-            ipStats[entry.ip_address].users.add(entry.username);
-            if (entry.status === 'failed') {
-                ipStats[entry.ip_address].failed++;
-            }
-        });
-
-        const tbody = document.getElementById('blockedIPsTable');
-        const suspiciousIPs = Object.values(ipStats).filter(ip => ip.failed >= 5);
-        
-        if (suspiciousIPs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No blocked IPs</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = suspiciousIPs.map(ip => `
-            <tr>
-                <td>${ip.ip}</td>
-                <td>${Array.from(ip.users).join(', ')}</td>
-                <td><strong style="color: #f87171">${ip.failed}</strong></td>
-                <td>${new Date(ip.firstSeen).toLocaleString()}</td>
-                <td>
-                    <button class="btn secondary" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;" onclick="quickUnblockIP('${ip.ip}')">Unblock</button>
-                </td>
-            </tr>
-        `).join('');
-    } catch (error) {
-        console.error('Error loading blocked IPs:', error);
-    }
-}
-
-async function loadLockedAccountsTable() {
-    try {
-        const alertsRes = await fetch(`${API_BASE}/dashboard/alerts?limit=50`);
-        const alertsData = await alertsRes.json();
-        const alerts = alertsData.alerts || [];
-
-        // Filter for lockout alerts
-        const lockedAccounts = alerts.filter(a => 
-            a.alert_type === 'BRUTE_FORCE_ATTACK' || 
-            a.alert_type === 'MULTIPLE_FAILED_ATTEMPTS'
-        );
-
-        const tbody = document.getElementById('lockedAccountsTable');
-        
-        if (lockedAccounts.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No locked accounts</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = lockedAccounts.slice(0, 10).map(account => {
-            const lockedTime = new Date(account.timestamp);
-            const unlockTime = new Date(lockedTime.getTime() + 15 * 60000); // +15 min
-            
-            return `
-                <tr>
-                    <td>${account.username}</td>
-                    <td>${account.ip_address}</td>
-                    <td>${lockedTime.toLocaleString()}</td>
-                    <td>${unlockTime.toLocaleString()}</td>
-                    <td>Brute-force detected</td>
-                    <td>
-                        <button class="btn secondary" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;" onclick="quickUnlockAccount('${account.username}')">Unlock</button>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-    } catch (error) {
-        console.error('Error loading locked accounts:', error);
-    }
-}
-
-async function loadConfig() {
-    try {
-        const res = await fetch(`${API_BASE}/config`);
-        const config = await res.json();
-
-        document.getElementById('maxFailed').value = config.max_failed_attempts;
-        document.getElementById('timeWindow').value = config.failed_attempts_window;
-        document.getElementById('lockoutDuration').value = config.lockout_duration;
-        document.getElementById('cooldownPeriod').value = config.cooldown_period;
-        document.getElementById('maxAttemptsPerIP').value = config.max_attempts_per_ip || 10;
-        document.getElementById('ipRateLimitWindow').value = config.ip_rate_limit_window || 60;
-
-        document.getElementById('currentSettings').innerHTML = `
-            <p><strong>Max Failed Attempts:</strong> ${config.max_failed_attempts}</p>
-            <p><strong>Time Window:</strong> ${config.failed_attempts_window}s (${Math.round(config.failed_attempts_window/60)} min)</p>
-            <p><strong>Lockout Duration:</strong> ${config.lockout_duration}s (${Math.round(config.lockout_duration/60)} min)</p>
-            <p><strong>Cooldown Period:</strong> ${config.cooldown_period}s (${Math.round(config.cooldown_period/60)} min)</p>
-            <p><strong>Max Attempts Per IP:</strong> ${config.max_attempts_per_ip || 10}</p>
-            <p><strong>IP Rate Limit Window:</strong> ${config.ip_rate_limit_window || 60}s (${Math.round((config.ip_rate_limit_window || 60)/60)} min)</p>
-        `;
-    } catch (error) {
-        console.error('Error loading config:', error);
-    }
-}
-
-async function blockIP() {
-    const ip = document.getElementById('ipAddress').value.trim();
-    
-    if (!ip) {
-        showAlert('ipAlert', 'Please enter an IP address', 'error');
-        return;
-    }
-
-    try {
-        const res = await fetch(`${API_BASE}/admin/block-ip`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ip})
-        });
-        
-        const data = await res.json();
-        showAlert('ipAlert', data.message, data.success ? 'success' : 'error');
-        
-        if (data.success) {
-            document.getElementById('ipAddress').value = '';
-            loadAdminData();
-        }
-    } catch (error) {
-        showAlert('ipAlert', 'Error: ' + error.message, 'error');
-    }
-}
-
-async function blockIPFromTable(ip) {
-    document.getElementById('ipAddress').value = ip;
-    blockIP();
-}
-
-async function unblockIP() {
-    const ip = document.getElementById('ipAddress').value.trim();
-    
-    if (!ip) {
-        showAlert('ipAlert', 'Please enter an IP address', 'error');
-        return;
-    }
-
-    try {
-        const res = await fetch(`${API_BASE}/admin/unblock-ip`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ip})
-        });
-        
-        const data = await res.json();
-        showAlert('ipAlert', data.message, data.success ? 'success' : 'error');
-        
-        if (data.success) {
-            document.getElementById('ipAddress').value = '';
-            loadAdminData();
-        }
-    } catch (error) {
-        showAlert('ipAlert', 'Error: ' + error.message, 'error');
-    }
-}
-
-async function quickUnblockIP(ip) {
-    if (!ip) {
-        alert('No IP provided');
-        return;
-    }
-    try {
-        const res = await fetch(`${API_BASE}/admin/unblock-ip`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ip})
-        });
-        
-        const data = await res.json();
-        alert(data.message);
-        loadAdminData();
-    } catch (error) {
-        alert('Error: ' + error.message);
-    }
-}
-
-async function lockAccount() {
-    const username = document.getElementById('username').value.trim();
-    
-    if (!username) {
-        showAlert('accountAlert', 'Please enter a username', 'error');
-        return;
-    }
-
-    try {
-        const res = await fetch(`${API_BASE}/admin/lock-account`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({username})
-        });
-        
-        const data = await res.json();
-        showAlert('accountAlert', data.message, data.success ? 'success' : 'error');
-        
-        if (data.success) {
-            document.getElementById('username').value = '';
-            loadAdminData();
-        }
-    } catch (error) {
-        showAlert('accountAlert', 'Error: ' + error.message, 'error');
-    }
-}
-
-async function lockAccountFromTable(username) {
-    document.getElementById('username').value = username;
-    lockAccount();
-}
-
-async function unlockAccount() {
-    const username = document.getElementById('username').value.trim();
-    
-    if (!username) {
-        showAlert('accountAlert', 'Please enter a username', 'error');
-        return;
-    }
-
-    try {
-        const res = await fetch(`${API_BASE}/admin/unlock-account`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({username})
-        });
-        
-        const data = await res.json();
-        showAlert('accountAlert', data.message, data.success ? 'success' : 'error');
-        
-        if (data.success) {
-            document.getElementById('username').value = '';
-            loadAdminData();
-        }
-    } catch (error) {
-        showAlert('accountAlert', 'Error: ' + error.message, 'error');
-    }
-}
-
-async function quickUnlockAccount(username) {
-    if (!username) {
-        alert('No username provided');
-        return;
-    }
-    try {
-        const res = await fetch(`${API_BASE}/admin/unlock-account`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({username})
-        });
-        
-        const data = await res.json();
-        alert(data.message);
-        loadAdminData();
-    } catch (error) {
-        alert('Error: ' + error.message);
-    }
-}
-
-async function saveConfig() {
-    try {
-        const config = {
-            max_failed_attempts: parseInt(document.getElementById('maxFailed').value),
-            failed_attempts_window: parseInt(document.getElementById('timeWindow').value),
-            lockout_duration: parseInt(document.getElementById('lockoutDuration').value),
-            cooldown_period: parseInt(document.getElementById('cooldownPeriod').value),
-            max_attempts_per_ip: parseInt(document.getElementById('maxAttemptsPerIP').value),
-            ip_rate_limit_window: parseInt(document.getElementById('ipRateLimitWindow').value)
-        };
-
-        const res = await fetch(`${API_BASE}/config`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(config)
-        });
-        
-        const data = await res.json();
-        showAlert('configAlert', 'Configuration saved successfully!', 'success');
-        loadConfig();
-    } catch (error) {
-        showAlert('configAlert', 'Error: ' + error.message, 'error');
-    }
-}
-
-function exportForensic() {
-    window.location.href = `${API_BASE}/export/forensic-logs`;
-}
-
-function exportAlerts() {
-    window.location.href = `${API_BASE}/export/alerts`;
-}
-
-function showAlert(id, message, type) {
-    const el = document.getElementById(id);
-    el.textContent = message;
-    el.className = 'alert show ' + type;
-    setTimeout(() => el.classList.remove('show'), 3000);
-}
-
-// Auto-refresh speed (in milliseconds)
-let refreshInterval = 500;  // 0.5 seconds for live updates
-let refreshTimerId = null;
 
 function startAutoRefresh() {
     if (!refreshTimerId) {
+        loadAdminData();
         refreshTimerId = setInterval(loadAdminData, refreshInterval);
-        document.getElementById('refreshStatus').innerHTML = '🟢 Auto-Refresh: ON (500ms)';
+        document.getElementById('refreshStatus').innerHTML = '🟢 Auto-Refresh: ON (' + (refreshInterval/1000) + 's)';
     }
 }
 
@@ -447,19 +24,380 @@ function stopAutoRefresh() {
     }
 }
 
-function setRefreshSpeed(speed) {
-    refreshInterval = speed;
-    if (refreshTimerId) {
-        stopAutoRefresh();
-        startAutoRefresh();
+async function loadAdminData() {
+    try {
+        await Promise.all([
+            loadStats(),
+            loadConfig(),
+            loadDetections(),
+            loadAlerts(),
+            loadAuditLog()
+        ]);
+    } catch (error) {
+        console.error('Error loading admin data:', error);
     }
-    const speedLabel = speed === 300 ? 'Fast (300ms)' : speed === 500 ? 'Normal (500ms)' : 'Slow (1s)';
-    document.getElementById('refreshStatus').innerHTML = `🟢 Auto-Refresh: ${speedLabel}`;
 }
 
-// Initial load
-window.addEventListener('load', () => {
-    loadAdminData();
+async function loadStats() {
+    try {
+        const statsRes = await fetch(`${API_BASE}/dashboard/stats`);
+        const stats = await statsRes.json();
+
+        document.getElementById('totalLogins').textContent = stats.total_logins || 0;
+        document.getElementById('failedAttempts').textContent = stats.failed_attempts || 0;
+        document.getElementById('activeAlerts').textContent = stats.active_alerts || 0;
+        document.getElementById('unreviewedDetections').textContent = stats.unreviewed_detections || 0;
+        document.getElementById('blockedIPs').textContent = stats.blocked_ips || 0;
+        document.getElementById('lockedAccounts').textContent = stats.locked_accounts || 0;
+    } catch (error) {
+        console.error('Error loading stats:', error);
+    }
+}
+
+async function loadConfig() {
+    try {
+        const res = await fetch(`${API_BASE}/config`);
+        const config = await res.json();
+
+        // Populate form fields
+        document.getElementById('detectionWindow').value = config.detection_window || 120;
+        document.getElementById('rapidThreshold').value = config.rapid_failure_threshold || 3;
+        document.getElementById('sustainedThreshold').value = config.sustained_failure_threshold || 10;
+        document.getElementById('distributedThreshold').value = config.distributed_attack_threshold || 5;
+        document.getElementById('stuffingThreshold').value = config.credential_stuffing_threshold || 10;
+        document.getElementById('travelTime').value = config.impossible_travel_time || 300;
+
+        // Display current settings
+        document.getElementById('currentSettings').innerHTML = `
+            <p><strong>Detection Window:</strong> ${config.detection_window}s (${Math.round(config.detection_window/60)} min)</p>
+            <p><strong>Rapid Failure Threshold:</strong> ${config.rapid_failure_threshold} attempts</p>
+            <p><strong>Sustained Attack Threshold:</strong> ${config.sustained_failure_threshold} attempts</p>
+            <p><strong>Distributed Attack Threshold:</strong> ${config.distributed_attack_threshold} IPs</p>
+            <p><strong>Credential Stuffing Threshold:</strong> ${config.credential_stuffing_threshold} usernames</p>
+            <p><strong>Impossible Travel Time:</strong> ${config.impossible_travel_time}s (${Math.round(config.impossible_travel_time/60)} min)</p>
+            <p style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #334155;"><strong>Active Detection Rules:</strong></p>
+            ${config.detection_rules ? config.detection_rules.map(rule => 
+                `<p style="margin-left: 1rem;">• ${rule.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>`
+            ).join('') : '<p style="margin-left: 1rem; color: #94a3b8;">No rules configured</p>'}
+        `;
+    } catch (error) {
+        console.error('Error loading config:', error);
+    }
+}
+
+async function loadDetections() {
+    try {
+        const res = await fetch(`${API_BASE}/analyst/detections?limit=20`);
+        const data = await res.json();
+        const detections = data.detections || [];
+
+        const tbody = document.getElementById('detectionsTable');
+        
+        if (detections.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No detections</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = detections.map(d => {
+            const severityBadge = getSeverityBadge(d.severity);
+            const reviewBadge = getReviewBadge(d.analyst_review);
+            
+            return `
+                <tr>
+                    <td><strong>#${d.id}</strong></td>
+                    <td>${formatPatternName(d.pattern_type)}</td>
+                    <td>${d.username || '-'}</td>
+                    <td>${d.ip_address || '-'}</td>
+                    <td>${severityBadge}</td>
+                    <td>${new Date(d.timestamp).toLocaleString()}</td>
+                    <td>${reviewBadge}</td>
+                </tr>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error loading detections:', error);
+    }
+}
+
+async function loadAlerts() {
+    try {
+        const res = await fetch(`${API_BASE}/dashboard/alerts?limit=20`);
+        const data = await res.json();
+        const alerts = data.alerts || [];
+
+        const tbody = document.getElementById('alertsTable');
+        
+        if (alerts.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No active alerts</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = alerts.map(a => {
+            const severityBadge = getSeverityBadge(a.severity);
+            
+            return `
+                <tr>
+                    <td>${a.alert_type}</td>
+                    <td>${a.username}</td>
+                    <td>${a.ip_address}</td>
+                    <td>${severityBadge}</td>
+                    <td>${new Date(a.timestamp).toLocaleString()}</td>
+                </tr>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error loading alerts:', error);
+    }
+}
+
+async function loadAuditLog() {
+    try {
+        const res = await fetch(`${API_BASE}/audit-log?limit=30`);
+        const data = await res.json();
+        const logs = data.audit_log || [];
+
+        const tbody = document.getElementById('auditTable');
+        
+        if (logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No audit entries</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = logs.map(l => `
+            <tr>
+                <td>${l.event_type}</td>
+                <td>${l.user}</td>
+                <td>${l.ip || '-'}</td>
+                <td>${l.action}</td>
+                <td>${new Date(l.timestamp).toLocaleString()}</td>
+                <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${l.details || '-'}</td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading audit log:', error);
+    }
+}
+
+async function saveConfig() {
+    try {
+        const config = {
+            detection_window: parseInt(document.getElementById('detectionWindow').value),
+            rapid_failure_threshold: parseInt(document.getElementById('rapidThreshold').value),
+            sustained_failure_threshold: parseInt(document.getElementById('sustainedThreshold').value),
+            distributed_attack_threshold: parseInt(document.getElementById('distributedThreshold').value),
+            credential_stuffing_threshold: parseInt(document.getElementById('stuffingThreshold').value),
+            impossible_travel_time: parseInt(document.getElementById('travelTime').value)
+        };
+
+        const res = await fetch(`${API_BASE}/config`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(config)
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            showAlert('configAlert', '✅ Configuration saved successfully!', 'success');
+            loadConfig();
+        } else {
+            showAlert('configAlert', '❌ Error saving configuration: ' + data.message, 'error');
+        }
+    } catch (error) {
+        showAlert('configAlert', '❌ Error: ' + error.message, 'error');
+    }
+}
+
+// ==================== ENFORCEMENT FUNCTIONS ====================
+
+async function blockIP() {
+    try {
+        const ip = document.getElementById('blockIpAddress').value.trim();
+        const reason = document.getElementById('blockIpReason').value.trim();
+        
+        if (!ip) {
+            showAlert('enforcementAlert', '❌ Please enter an IP address', 'error');
+            return;
+        }
+        
+        if (!reason) {
+            showAlert('enforcementAlert', '❌ Please enter a reason for blocking', 'error');
+            return;
+        }
+        
+        const res = await fetch(`${API_BASE}/admin/block-ip`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                ip: ip,
+                reason: reason,
+                admin: 'ADMIN'
+            })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            showAlert('enforcementAlert', `✅ ${data.message}`, 'success');
+            document.getElementById('blockIpAddress').value = '';
+            document.getElementById('blockIpReason').value = '';
+            loadAdminData();
+        } else {
+            showAlert('enforcementAlert', '❌ Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        showAlert('enforcementAlert', '❌ Error blocking IP: ' + error.message, 'error');
+    }
+}
+
+async function unblockIP() {
+    try {
+        const ip = document.getElementById('unblockIpAddress').value.trim();
+        
+        if (!ip) {
+            showAlert('enforcementAlert', '❌ Please enter an IP address', 'error');
+            return;
+        }
+        
+        const res = await fetch(`${API_BASE}/admin/unblock-ip`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ ip: ip })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            showAlert('enforcementAlert', `✅ ${data.message}`, 'success');
+            document.getElementById('unblockIpAddress').value = '';
+            loadAdminData();
+        } else {
+            showAlert('enforcementAlert', '❌ Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        showAlert('enforcementAlert', '❌ Error unblocking IP: ' + error.message, 'error');
+    }
+}
+
+async function lockAccount() {
+    try {
+        const username = document.getElementById('lockUsername').value.trim();
+        const reason = document.getElementById('lockReason').value.trim();
+        
+        if (!username) {
+            showAlert('enforcementAlert', '❌ Please enter a username', 'error');
+            return;
+        }
+        
+        if (!reason) {
+            showAlert('enforcementAlert', '❌ Please enter a reason for locking', 'error');
+            return;
+        }
+        
+        const res = await fetch(`${API_BASE}/admin/lock-account`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                username: username,
+                reason: reason,
+                admin: 'ADMIN'
+            })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            showAlert('enforcementAlert', `✅ ${data.message}`, 'success');
+            document.getElementById('lockUsername').value = '';
+            document.getElementById('lockReason').value = '';
+            loadAdminData();
+        } else {
+            showAlert('enforcementAlert', '❌ Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        showAlert('enforcementAlert', '❌ Error locking account: ' + error.message, 'error');
+    }
+}
+
+async function unlockAccount() {
+    try {
+        const username = document.getElementById('unlockUsername').value.trim();
+        
+        if (!username) {
+            showAlert('enforcementAlert', '❌ Please enter a username', 'error');
+            return;
+        }
+        
+        const res = await fetch(`${API_BASE}/admin/unlock-account`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                username: username,
+                admin: 'ADMIN'
+            })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            showAlert('enforcementAlert', `✅ ${data.message}`, 'success');
+            document.getElementById('unlockUsername').value = '';
+            loadAdminData();
+        } else {
+            showAlert('enforcementAlert', '❌ Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        showAlert('enforcementAlert', '❌ Error unlocking account: ' + error.message, 'error');
+    }
+}
+
+function exportForensicLogs() {
+    window.location.href = `${API_BASE}/export/forensic-logs`;
+}
+
+function exportDetections() {
+    window.location.href = `${API_BASE}/export/detections`;
+}
+
+function exportAlerts() {
+    window.location.href = `${API_BASE}/export/alerts`;
+}
+
+function showAlert(id, message, type) {
+    const el = document.getElementById(id);
+    el.textContent = message;
+    el.className = 'alert show ' + type;
+    setTimeout(() => el.classList.remove('show'), 5000);
+}
+
+// ==================== HELPER FUNCTIONS ====================
+
+function formatPatternName(pattern) {
+    return pattern.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
+function getSeverityBadge(severity) {
+    const badges = {
+        'critical': '<span class="badge danger">🚨 CRITICAL</span>',
+        'high': '<span class="badge danger">⚠️ HIGH</span>',
+        'medium': '<span class="badge warning">⚡ MEDIUM</span>',
+        'low': '<span class="badge success">ℹ️ LOW</span>'
+    };
+    return badges[severity] || '<span class="badge">-</span>';
+}
+
+function getReviewBadge(status) {
+    const badges = {
+        'pending': '<span class="badge warning">⏳ Pending</span>',
+        'true_positive': '<span class="badge danger">✅ True Positive</span>',
+        'false_positive': '<span class="badge success">❌ False Positive</span>',
+        'investigate': '<span class="badge" style="background: #1e3a8a; color: #93c5fd;">🔍 Investigating</span>'
+    };
+    return badges[status] || '<span class="badge">Unknown</span>';
+}
+
+// ==================== INITIALIZATION ====================
+
+document.addEventListener('DOMContentLoaded', () => {
     startAutoRefresh();
-    document.getElementById('refreshStatus').innerHTML = '🟢 Auto-Refresh: ON (500ms)';
 });
