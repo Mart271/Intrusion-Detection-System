@@ -8,10 +8,10 @@ function logout() {
 
 async function loadAnalystData() {
     try {
-        // Fetch alerts
+        // Fetch alerts (only unresolved)
         const alertsRes = await fetch(`${API_BASE}/dashboard/alerts?limit=20`);
         const alertsData = await alertsRes.json();
-        const alerts = alertsData.alerts || [];
+        const alerts = (alertsData.alerts || []).filter(a => !a.resolved);
 
         // Count by severity
         const critical = alerts.filter(a => a.severity === 'critical').length;
@@ -57,7 +57,11 @@ function loadAlertsTable(alerts) {
             <td>${a.ip_address}</td>
             <td><span class="severity-${a.severity}">${a.severity.toUpperCase()}</span></td>
             <td>${new Date(a.timestamp).toLocaleString()}</td>
-            <td><button class="btn" onclick="resolveAlert(${a.id})">Resolve</button></td>
+            <td>
+                <button class="btn" onclick="resolveAlert(${a.id}, '${a.username}', '${a.ip_address}')">
+                    Resolve
+                </button>
+            </td>
         </tr>
     `).join('');
 }
@@ -90,19 +94,36 @@ function filterLogs() {
     loadLogsTable(filtered);
 }
 
-async function resolveAlert(alertId) {
+async function resolveAlert(alertId, username, ipAddress) {
+    // Confirm before resolving
+    if (!confirm(`Resolve alert for ${username} (${ipAddress})?\n\nThis will notify the administrator.`)) {
+        return;
+    }
+
     try {
         const res = await fetch(`${API_BASE}/admin/resolve-alert`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({alert_id: alertId})
+            body: JSON.stringify({
+                alert_id: alertId,
+                resolved_by: 'ANALYST',
+                username: username,
+                ip_address: ipAddress,
+                notify_admin: true
+            })
         });
         
         const data = await res.json();
-        alert(data.message);
-        loadAnalystData();
+        
+        if (data.success) {
+            alert('✅ ' + data.message + '\n\nAdministrator has been notified.');
+            loadAnalystData(); // Refresh the data
+        } else {
+            alert('❌ Error: ' + data.message);
+        }
     } catch (error) {
-        alert('Error resolving alert: ' + error.message);
+        alert('❌ Error resolving alert: ' + error.message);
+        console.error('Error:', error);
     }
 }
 
@@ -113,5 +134,5 @@ function exportLogs() {
 // Initial load
 window.addEventListener('load', loadAnalystData);
 
-// Auto-refresh every 3 seconds
-setInterval(loadAnalystData, 3000);
+// Auto-refresh every 5 seconds
+setInterval(loadAnalystData, 5000);

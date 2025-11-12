@@ -326,16 +326,16 @@ def run_detection_rules(username, ip):
     
     return detections
 
-# ==================== LOGIN ENDPOINT (IDS MONITORING) ====================
+# ==================== LOGIN ENDPOINT ====================
 
 @app.route('/api/login', methods=['POST'])
 def login():
     """
-    Login endpoint with IDS monitoring
-    - Allows all login attempts to proceed
+    Login endpoint with IDS monitoring and enforcement
+    - CHECKS for blocked IPs and locked accounts (ENFORCES BLOCKS)
     - Logs everything for forensic analysis
     - Detects suspicious patterns
-    - Alerts analysts but DOES NOT BLOCK
+    - BLOCKS access if administrator has blocked IP or locked account
     """
     try:
         data = request.json
@@ -344,6 +344,39 @@ def login():
         ip = request.remote_addr
         location = get_ip_location(ip)
         
+        # ==================== ENFORCEMENT CHECKS ====================
+        # Check if IP is blocked
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute('SELECT reason, blocked_at FROM blocked_ips_log WHERE ip_address=? AND is_active=1', (ip,))
+        blocked_ip = c.fetchone()
+        
+        if blocked_ip:
+            log_event(username, ip, 'blocked_ip', location)
+            log_forensic_action("LOGIN_BLOCKED", username, ip, "BLOCKED_IP", f"Reason: {blocked_ip[0]}")
+            conn.close()
+            print(f"🚫 LOGIN BLOCKED: IP {ip} is blocked - Reason: {blocked_ip[0]}")
+            return jsonify({
+                'success': False,
+                'message': f'Access denied: Your IP address has been blocked. Reason: {blocked_ip[0]}'
+            }), 403
+        
+        # Check if account is locked
+        c.execute('SELECT reason, unlock_time FROM locked_accounts_log WHERE username=? AND is_active=1', (username,))
+        locked_account = c.fetchone()
+        conn.close()
+        
+        if locked_account:
+            unlock_time = locked_account[1]
+            log_event(username, ip, 'locked_account', location)
+            log_forensic_action("LOGIN_BLOCKED", username, ip, "LOCKED_ACCOUNT", f"Reason: {locked_account[0]}")
+            print(f"🔒 LOGIN BLOCKED: Account {username} is locked - Reason: {locked_account[0]}")
+            return jsonify({
+                'success': False,
+                'message': f'Account locked. Reason: {locked_account[0]}. Unlock time: {unlock_time}'
+            }), 403
+        
+        # ==================== CREDENTIAL VALIDATION ====================
         # Validate credentials
         if username in USERS_DB and USERS_DB[username]['password'] == password:
             # ✅ SUCCESSFUL LOGIN
@@ -578,7 +611,7 @@ def get_ip_forensics(ip):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ==================== SECURITY OFFICER ENDPOINTS (Manual Actions) ====================
+# ==================== ADMIN ENDPOINTS (Manual Enforcement Actions) ====================
 
 @app.route('/api/admin/block-ip', methods=['POST'])
 def admin_block_ip():
@@ -677,6 +710,51 @@ def admin_unlock_account():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
+@app.route('/api/admin/resolve-alert', methods=['POST'])
+def admin_resolve_alert():
+    """
+    Analyst resolves an alert and optionally notifies administrator
+    This marks the alert as reviewed and resolved
+    """
+    try:
+        data = request.json
+        alert_id = data.get('alert_id')
+        resolved_by = data.get('resolved_by', 'ANALYST')
+        username = data.get('username', '')
+        ip_address = data.get('ip_address', '')
+        notify_admin = data.get('notify_admin', False)
+        
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        
+        # Mark alert as resolved
+        c.execute('''UPDATE alerts SET resolved=1, resolved_at=?, resolved_by=? 
+                    WHERE id=?''', 
+                  (datetime.now().isoformat(), resolved_by, alert_id))
+        
+        conn.commit()
+        conn.close()
+        
+        # Log the action
+        log_forensic_action("ALERT_RESOLVED", resolved_by, ip_address, "ANALYST_REVIEW", 
+                           f"Alert #{alert_id} for {username} resolved")
+        
+        # Notify admin if requested
+        message = f'Alert #{alert_id} resolved for {username} ({ip_address})'
+        if notify_admin:
+            # In production, this would send an email/notification to admin
+            print(f"📧 NOTIFICATION TO ADMIN: {message}")
+            message += ' - Administrator notified'
+        
+        return jsonify({
+            'success': True,
+            'message': message,
+            'alert_id': alert_id
+        })
+    
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 # ==================== DASHBOARD & REPORTING ====================
 
 @app.route('/api/dashboard/stats', methods=['GET'])
@@ -698,9 +776,12 @@ def get_dashboard_stats():
         c.execute('SELECT COUNT(*) FROM alerts WHERE resolved=0')
         active_alerts = c.fetchone()[0]
         
-        # Unreviewed detections
-        c.execute("SELECT COUNT(*) FROM detection_patterns WHERE analyst_review='pending'")
-        unreviewed_detections = c.fetchone()[0]
+        # Unreviewed detections (check if table exists first)
+        try:
+            c.execute("SELECT COUNT(*) FROM detection_patterns WHERE analyst_review='pending'")
+            unreviewed_detections = c.fetchone()[0]
+        except:
+            unreviewed_detections = 0
         
         # Blocked IPs
         c.execute('SELECT COUNT(*) FROM blocked_ips_log WHERE is_active=1')
@@ -710,6 +791,20 @@ def get_dashboard_stats():
         c.execute('SELECT COUNT(*) FROM locked_accounts_log WHERE is_active=1')
         locked_accounts = c.fetchone()[0]
         
+        # Rate limited IPs (count IPs with many failed attempts in last hour)
+        try:
+            c.execute("""
+                SELECT COUNT(DISTINCT ip_address) 
+                FROM login_events 
+                WHERE status='failed' 
+                AND datetime(timestamp) > datetime('now', '-1 hour')
+                GROUP BY ip_address
+                HAVING COUNT(*) >= 10
+            """)
+            rate_limited_ips = len(c.fetchall())
+        except:
+            rate_limited_ips = 0
+        
         conn.close()
         
         return jsonify({
@@ -718,11 +813,22 @@ def get_dashboard_stats():
             'active_alerts': active_alerts,
             'unreviewed_detections': unreviewed_detections,
             'blocked_ips': blocked_ips,
-            'locked_accounts': locked_accounts
+            'locked_accounts': locked_accounts,
+            'rate_limited_ips': rate_limited_ips
         })
     
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error in dashboard stats: {e}")
+        return jsonify({
+            'total_logins': 0,
+            'failed_attempts': 0,
+            'active_alerts': 0,
+            'unreviewed_detections': 0,
+            'blocked_ips': 0,
+            'locked_accounts': 0,
+            'rate_limited_ips': 0,
+            'error': str(e)
+        }), 200  # Return 200 with zeros instead of 500
 
 @app.route('/api/detections/stats', methods=['GET'])
 def get_detection_stats():
@@ -913,13 +1019,14 @@ if __name__ == '__main__':
     init_db()
     
     print("\n" + "="*80)
-    print("🔍 IDS (INTRUSION DETECTION SYSTEM) - PURE DETECTION MODE")
+    print("🛡️ IDS (INTRUSION DETECTION SYSTEM) - DETECTION + ENFORCEMENT MODE")
     print("="*80)
-    print("\n📋 SYSTEM MODE: Detection & Alerting Only")
-    print("   ✓ All login attempts are allowed to proceed")
+    print("\n📋 SYSTEM MODE: Detection, Alerting & Manual Enforcement")
     print("   ✓ Suspicious patterns are detected and logged")
     print("   ✓ Analysts review detections and recommend actions")
-    print("   ✓ Officers implement actions manually based on recommendations")
+    print("   ✓ Administrators implement blocking actions based on recommendations")
+    print("   ✓ System ENFORCES administrator-approved blocks")
+    print("   ✓ Blocked IPs and locked accounts CANNOT login")
     print("\n🔍 ACTIVE DETECTION PATTERNS:")
     for rule in IDS_CONFIG['detection_rules']:
         print(f"   • {rule}")
