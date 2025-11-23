@@ -3,21 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SecureBank - Secure Login</title>
+    <title>SecureBank - Customer Portal</title>
     <link rel="stylesheet" href="login.css">
 </head>
 <body>
     <!-- Login Container -->
     <div class="container" id="loginContainer">
         <div class="left-panel">
-            <h1>🏦 SecureBank</h1>
-            <p>Access your account securely. Our advanced security systems protect your sensitive financial information 24/7 with real-time IDS protection.</p>
-            <div class="security-features">
-                <p>🔐 256-bit SSL Encryption</p>
-                <p>🛡️ Real-time Intrusion Detection</p>
-                <p>⚡ Brute-Force Protection</p>
-                <p>🔒 Account Lockout System</p>
-                <p>📊 Multi-layer Security Monitoring</p>
+            <h1>SecureBank</h1>
+            <p>Access your account securely. Our advanced security systems protect your sensitive financial information 24/7.</p>
+            <div style="margin-top: 30px; opacity: 0.8;">
+                <p style="font-size: 0.9em;">🔒 256-bit SSL Encryption</p>
+                <p style="font-size: 0.9em;">🛡️ Brute Force Attack Protection </p>
             </div>
         </div>
         <div class="right-panel">
@@ -25,29 +22,24 @@
                 <h2>Welcome Back</h2>
                 <p>Sign in to your account</p>
                 
-                <div class="error-message" id="errorMessage"></div>
-                <div class="success-message" id="successMessage"></div>
+                <div class="error-message" id="errorMessage">Invalid credentials. Please try again.</div>
+                <div class="success-message" id="successMessage">Login successful! Redirecting...</div>
                 
-                <form id="loginForm" onsubmit="handleLogin(event)">
-                    <div class="form-group">
-                        <label for="username">Username</label>
-                        <input type="text" id="username" placeholder="Enter your username" required autocomplete="off">
+                <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                     <input type="text" id="username" name="username" placeholder="Enter your username" required autocomplete="off">
+                </div>
+                 <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required autocomplete="off">
                     </div>
-                    <div class="form-group">
-                        <label for="password">Password</label>
-                        <input type="password" id="password" placeholder="Enter your password" required autocomplete="off">
-                    </div>
-                    <button type="submit" class="login-btn" id="loginBtn">
-                        <span id="btnText">Sign In</span>
-                        <div class="loading" id="btnLoading" style="display: none;"></div>
-                    </button>
+                        <button type="submit" class="login-btn">Sign In</button>
                 </form>
                 
-                <div class="attempt-info">
-                    <span>Failed Attempts:</span>
-                    <span class="status-badge" id="attemptBadge">0/3</span>
+                <div class="attempt-counter" id="attemptCounter">
+                    Login attempts: <span id="attemptCount">0</span>
                 </div>
-                
                 <div style="margin-top: 20px; font-size: 0.85em; color: #999; text-align: center;">
                     <p>📝 Test Account: <strong>testuser</strong></p>
                     <p>🔑 Password: <strong>correct_password</strong></p>
@@ -58,48 +50,180 @@
 
     <!-- Dashboard (Hidden Initially) -->
     <div class="dashboard" id="dashboard">
-        <div class="dashboard-header">
-            <h1>🏦 SecureBank Dashboard</h1>
-            <p>Welcome, <strong id="loggedUser"></strong></p>
-            <button onclick="logout()" class="logout-btn">Logout</button>
+        <div class="warning-banner">
+            <h4>⚠️ Demo Environment - IDS Testing</h4>
+            <p>This is a demonstration environment for Intrusion Detection System testing. The data shown is fictional.</p>
         </div>
-        
-        <div class="dashboard-content">
-            <div class="dashboard-card">
-                <h2>✅ Login Successful!</h2>
-                <p>Your account is protected by our advanced IDS system.<br>
-                   All login attempts are monitored and logged.<br>
-                   Suspicious activities are automatically detected and blocked.</p>
-                
-                <div class="security-stats">
-                    <div class="stat-box">
-                        <h3>🔐 Security Status</h3>
-                        <p class="stat-value">PROTECTED</p>
-                    </div>
-                    <div class="stat-box">
-                        <h3>📊 IDS Status</h3>
-                        <p class="stat-value">ACTIVE</p>
-                    </div>
-                    <div class="stat-box">
-                        <h3>⚡ Protection</h3>
-                        <p class="stat-value">ENABLED</p>
-                    </div>
-                </div>
 
-                <div class="features-list">
-                    <h3>🎯 Your System Has:</h3>
-                    <ul>
-                        <li>✅ Real-time Brute-Force Detection</li>
-                        <li>✅ Automatic Account Lockout (3 failed attempts)</li>
-                        <li>✅ IP Address Blocking</li>
-                        <li>✅ Rate Limiting (100 attempts per IP)</li>
-                        <li>✅ 2FA with OTP via Email</li>
-                        <li>✅ Forensic Logging & Audit Trail</li>
-                        <li>✅ Admin Dashboard Control</li>
-                        <li>✅ Security Analyst Monitoring</li>
-                    </ul>
+        <div class="dashboard-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>Customer Dashboard</h1>
+                    <p>Welcome back, <strong id="loggedUser"></strong></p>
                 </div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
             </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="card">
+                <h3>
+                    <div class="card-icon">💰</div>
+                    Account Balance
+                </h3>
+                <p style="font-size: 2em; color: #27ae60; font-weight: 700;">$45,782.50</p>
+                <p style="color: #666; margin-top: 10px;">Checking Account</p>
+            </div>
+
+            <div class="card">
+                <h3>
+                    <div class="card-icon">💳</div>
+                    Credit Card
+                </h3>
+                <p style="font-size: 2em; color: #3498db; font-weight: 700;">$2,340.00</p>
+                <p style="color: #666; margin-top: 10px;">Available Credit: $7,660</p>
+            </div>
+
+            <div class="card">
+                <h3>
+                    <div class="card-icon">📊</div>
+                    Investments
+                </h3>
+                <p style="font-size: 2em; color: #9b59b6; font-weight: 700;">$123,456.78</p>
+                <p style="color: #27ae60; margin-top: 10px;">↑ +5.2% This Month</p>
+            </div>
+        </div>
+
+        <div class="data-table">
+            <h3 style="margin-bottom: 20px; color: #333;">Recent Transactions</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2025-11-05</td>
+                        <td>Amazon Purchase</td>
+                        <td>-$156.99</td>
+                        <td><span class="status-badge status-active">Completed</span></td>
+                    </tr>
+                    <tr>
+                        <td>2025-11-04</td>
+                        <td>Salary Deposit</td>
+                        <td style="color: #27ae60;">+$5,500.00</td>
+                        <td><span class="status-badge status-active">Completed</span></td>
+                    </tr>
+                    <tr>
+                        <td>2025-11-03</td>
+                        <td>Electric Bill Payment</td>
+                        <td>-$89.45</td>
+                        <td><span class="status-badge status-active">Completed</span></td>
+                    </tr>
+                    <tr>
+                        <td>2025-11-02</td>
+                        <td>Grocery Store</td>
+                        <td>-$234.67</td>
+                        <td><span class="status-badge status-active">Completed</span></td>
+                    </tr>
+                    <tr>
+                        <td>2025-11-01</td>
+                        <td>Wire Transfer</td>
+                        <td>-$1,000.00</td>
+                        <td><span class="status-badge status-pending">Pending</span></td>
+                    </tr>
+                    <tr>
+                        <td>2025-10-31</td>
+                        <td>Restaurant - Italian Bistro</td>
+                        <td>-$87.32</td>
+                        <td><span class="status-badge status-active">Completed</span></td>
+                    </tr>
+                    <tr>
+                        <td>2025-10-30</td>
+                        <td>Gas Station</td>
+                        <td>-$45.00</td>
+                        <td><span class="status-badge status-active">Completed</span></td>
+                    </tr>
+                    <tr>
+                        <td>2025-10-29</td>
+                        <td>Netflix Subscription</td>
+                        <td>-$15.99</td>
+                        <td><span class="status-badge status-active">Completed</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="data-table" style="margin-top: 20px;">
+            <h3 style="margin-bottom: 20px; color: #333;">Personal Information</h3>
+            <table>
+                <tbody>
+                    <tr>
+                        <td style="font-weight: 600; width: 200px;">Full Name</td>
+                        <td>John Anderson Smith</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Email</td>
+                        <td>john.smith@securebank.com</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Phone</td>
+                        <td>+1 (555) 123-4567</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Address</td>
+                        <td>123 Main Street, New York, NY 10001</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Social Security</td>
+                        <td>***-**-4829</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Account Number</td>
+                        <td>****-****-****-7892</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Date of Birth</td>
+                        <td>March 15, 1985</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Member Since</td>
+                        <td>January 2010</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="data-table" style="margin-top: 20px;">
+            <h3 style="margin-bottom: 20px; color: #333;">Security Information</h3>
+            <table>
+                <tbody>
+                    <tr>
+                        <td style="font-weight: 600; width: 200px;">Last Login</td>
+                        <td>November 5, 2025 - 14:32 PM EST</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Login IP Address</td>
+                        <td>192.168.1.105</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Two-Factor Auth</td>
+                        <td><span class="status-badge status-active">Enabled</span></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Security Question</td>
+                        <td>What is your mother's maiden name?</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">Recovery Email</td>
+                        <td>j.smith.backup@email.com</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 

@@ -1,160 +1,213 @@
-// ==================== CONFIGURATION ====================
+const API_BASE = 'http://127.0.0.1:5000/api';
+let loginAttempts = 0;
 
-const API_BASE = 'http://localhost:5000/api';
-const MAX_ATTEMPTS = 3;
+// Session Manager Class
+class SessionManager {
+    static setSession(token, role, username) {
+        sessionStorage.setItem('sessionToken', token);
+        sessionStorage.setItem('userRole', role);
+        sessionStorage.setItem('username', username);
+    }
+    
+    static getToken() {
+        return sessionStorage.getItem('sessionToken');
+    }
+    
+    static getRole() {
+        return sessionStorage.getItem('userRole');
+    }
+    
+    static getUsername() {
+        return sessionStorage.getItem('username');
+    }
+    
+    static clearSession() {
+        sessionStorage.removeItem('sessionToken');
+        sessionStorage.removeItem('userRole');
+        sessionStorage.removeItem('username');
+    }
+    
+    static isLoggedIn() {
+        return !!this.getToken();
+    }
+}
 
-// ==================== STATE ====================
+// API Client Class
+class APIClient {
+    static getHeaders() {
+        const headers = { 'Content-Type': 'application/json' };
+        const token = SessionManager.getToken();
+        if (token) {
+            headers['X-Session-Token'] = token;
+        }
+        return headers;
+    }
+    
+    static async post(endpoint, data) {
+        const res = await fetch(`${API_BASE}${endpoint}`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify(data)
+        });
+        return { response: res, data: await res.json() };
+    }
+}
 
-let failedAttempts = 0;
-
-// ==================== LOGIN HANDLER ====================
-
-async function handleLogin(event) {
-    event.preventDefault();
-
+async function handleLogin(e) {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
-    const loginBtn = document.getElementById('loginBtn');
-    const btnText = document.getElementById('btnText');
-    const btnLoading = document.getElementById('btnLoading');
-    const errorMsg = document.getElementById('errorMessage');
-    const successMsg = document.getElementById('successMessage');
-
-    // Hide messages
-    errorMsg.classList.remove('show');
-    successMsg.classList.remove('show');
-
-    // Disable button and show loading
-    loginBtn.disabled = true;
-    btnText.style.display = 'none';
-    btnLoading.style.display = 'inline-block';
-
+    const errorMessage = document.getElementById('errorMessage');
+    const successMessage = document.getElementById('successMessage');
+    const loginButton = document.querySelector('.login-btn');
+    
+    if (loginButton.disabled) return;
+    
+    loginAttempts++;
+    document.getElementById('attemptCount').textContent = loginAttempts;
+    
+    loginButton.disabled = true;
+    loginButton.textContent = 'Signing In...';
+    
     try {
-        // Call IDS backend API
-        const response = await fetch(`${API_BASE}/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            // ==================== SUCCESS ====================
-            failedAttempts = 0;
-            updateAttemptBadge();
-            
-            successMsg.textContent = '✅ Login successful! Redirecting to dashboard...';
-            successMsg.classList.add('show');
-
-            console.log(`✅ LOGIN SUCCESSFUL - User: ${username} - Time: ${new Date().toLocaleString()}`);
-
-            setTimeout(() => {
-                showDashboard(username);
-            }, 1500);
-
-        } else {
-            // ==================== FAILURE ====================
-            failedAttempts++;
-            updateAttemptBadge();
-
-            let errorText = data.message;
-
-            // Format error message with emoji based on reason
-            if (data.message.includes('locked')) {
-                errorText = '🔒 ' + data.message;
-            } else if (data.message.includes('blocked')) {
-                errorText = '🚫 ' + data.message;
-            } else if (data.message.includes('Invalid')) {
-                errorText = '❌ ' + data.message;
-            } else {
-                errorText = '⚠️ ' + data.message;
-            }
-
-            errorMsg.textContent = errorText;
-            errorMsg.classList.add('show');
-
-            // Clear password field for security
-            document.getElementById('password').value = '';
-
-            console.log(`❌ LOGIN FAILED - User: ${username} - Reason: ${data.message} - Failed Attempts: ${failedAttempts}`);
+        const { response, data } = await APIClient.post('/login', { username, password });
+        
+        if (response.status === 429) {
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+            errorMessage.innerHTML = `<strong>Too Many Attempts!</strong><br>${data.message || 'Please wait before trying again.'}`;
+            shakeForm();
+            showRateLimitCountdown(loginButton, 60);
+            return;
         }
-
+        
+        if (response.ok && data.success) {
+            // Store session
+            SessionManager.setSession(data.session_token, data.role, data.username);
+            
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'block';
+            successMessage.textContent = data.message || 'Login successful! Redirecting...';
+            
+            // Check password change requirement
+            if (data.must_change_password) {
+                successMessage.textContent = 'Password change required. Redirecting...';
+                setTimeout(() => {
+                    window.location.href = 'change-password.html';
+                }, 1500);
+                return;
+            }
+            
+            setTimeout(() => {
+                redirectBasedOnRole(data.role);
+            }, 1500);
+            
+        } else if (response.status === 403) {
+            successMessage.style.display = 'none';
+            errorMessage.style.display = 'block';
+            errorMessage.innerHTML = `<strong>Access Denied!</strong><br>${data.message}`;
+            shakeForm();
+            loginButton.disabled = false;
+            loginButton.textContent = 'Sign In';
+            
+        } else {
+            successMessage.style.display = 'none';
+            errorMessage.style.display = 'block';
+            errorMessage.textContent = data.message || 'Invalid username or password';
+            shakeForm();
+            loginButton.disabled = false;
+            loginButton.textContent = 'Sign In';
+        }
+        
     } catch (error) {
-        // ==================== CONNECTION ERROR ====================
-        errorMsg.textContent = '❌ Connection error: ' + error.message;
-        errorMsg.classList.add('show');
-        failedAttempts++;
-        updateAttemptBadge();
-
-        console.error('Connection Error:', error);
-    } finally {
-        // Re-enable button
-        loginBtn.disabled = false;
-        btnText.style.display = 'inline';
-        btnLoading.style.display = 'none';
+        console.error('Login error:', error);
+        errorMessage.style.display = 'block';
+        successMessage.style.display = 'none';
+        errorMessage.textContent = 'Connection error. Please check if server is running.';
+        shakeForm();
+        loginButton.disabled = false;
+        loginButton.textContent = 'Sign In';
     }
 }
 
-// ==================== ATTEMPT BADGE UPDATER ====================
-
-function updateAttemptBadge() {
-    const badge = document.getElementById('attemptBadge');
-    badge.textContent = `${failedAttempts}/${MAX_ATTEMPTS}`;
-    
-    // Remove all classes
-    badge.classList.remove('warning', 'danger');
-    
-    // Add appropriate class
-    if (failedAttempts >= 2) {
-        badge.classList.add('warning');
-    }
-    if (failedAttempts >= MAX_ATTEMPTS) {
-        badge.classList.add('danger');
+function redirectBasedOnRole(role) {
+    switch (role) {
+        case 'admin':
+            window.location.href = 'admin.html';
+            break;
+        case 'analyst':
+            window.location.href = 'analyst.html';
+            break;
+        default:
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('loggedUser').textContent = SessionManager.getUsername();
     }
 }
 
-// ==================== DASHBOARD DISPLAY ====================
-
-function showDashboard(username) {
-    document.getElementById('loginContainer').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    document.getElementById('loggedUser').textContent = username;
-
-    console.log(`📊 Dashboard loaded for user: ${username}`);
+function shakeForm() {
+    const loginForm = document.querySelector('.login-form');
+    if (loginForm) {
+        loginForm.style.animation = 'shake 0.5s';
+        setTimeout(() => loginForm.style.animation = '', 500);
+    }
 }
 
-// ==================== LOGOUT ====================
-
-function logout() {
-    console.log('👋 User logged out');
+function showRateLimitCountdown(btn, seconds) {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
     
-    // Hide dashboard and show login
-    document.getElementById('dashboard').style.display = 'none';
+    const countdown = setInterval(() => {
+        btn.textContent = `Wait ${seconds}s`;
+        seconds--;
+        
+        if (seconds < 0) {
+            clearInterval(countdown);
+            btn.disabled = false;
+            btn.textContent = 'Sign In';
+            btn.style.opacity = '1';
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+    }, 1000);
+}
+
+async function logout() {
+    try {
+        await APIClient.post('/logout', {});
+    } catch (e) {
+        console.error('Logout error:', e);
+    }
+    
+    SessionManager.clearSession();
+    loginAttempts = 0;
+    
     document.getElementById('loginContainer').style.display = 'flex';
-    
-    // Reset form
-    document.getElementById('loginForm').reset();
-    document.getElementById('errorMessage').classList.remove('show');
-    document.getElementById('successMessage').classList.remove('show');
-    
-    // Reset counters
-    failedAttempts = 0;
-    updateAttemptBadge();
-
-    // Focus on username field
-    document.getElementById('username').focus();
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+    document.getElementById('attemptCount').textContent = '0';
 }
 
-// ==================== INITIALIZATION ====================
-
+// Check if already logged in on page load
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔐 SecureBank Login System Initialized');
-    console.log('📡 Backend API: ' + API_BASE);
+    if (SessionManager.isLoggedIn()) {
+        const role = SessionManager.getRole();
+        if (role === 'admin' || role === 'analyst') {
+            redirectBasedOnRole(role);
+            return;
+        }
+    }
     
-    // Set initial attempt badge
-    updateAttemptBadge();
-    
-    // Focus on username field
-    document.getElementById('username').focus();
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleLogin(e);
+            return false;
+        });
+    }
 });

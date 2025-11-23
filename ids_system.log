@@ -1,0 +1,309 @@
+2025-11-23 06:51:34,955 [INFO] New user account created with role 'admin'
+2025-11-23 06:51:34,955 [INFO] Default admin account created
+2025-11-23 06:51:35,264 [INFO] New user account created with role 'analyst'
+2025-11-23 06:51:35,265 [INFO] Default analyst account created
+2025-11-23 06:51:35,574 [INFO] New user account created with role 'user'
+2025-11-23 06:51:35,574 [INFO] Default user account created
+2025-11-23 06:51:35,622 [INFO] Database initialized successfully
+2025-11-23 06:51:35,622 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 06:51:35,622 [INFO] Environment: development
+2025-11-23 06:51:35,623 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 06:51:35,623 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 06:51:35,623 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 06:51:36,182 [INFO] Database initialized successfully
+2025-11-23 06:51:36,182 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 06:51:36,182 [INFO] Environment: development
+2025-11-23 06:51:36,182 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 06:51:36,183 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 06:51:36,183 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 06:53:41,381 [INFO] Session created for user from 127.0.0.1
+2025-11-23 06:54:15,120 [INFO] Session created for user from 127.0.0.1
+2025-11-23 06:54:42,016 [INFO] Session created for user from 127.0.0.1
+2025-11-23 06:55:19,746 [WARNING] 🟠 ALERT: BRUTE_FORCE_ATTACK | HIGH
+2025-11-23 06:55:19,749 [INFO] 📧 SECURITY ALERT: BRUTE_FORCE_ATTACK [high]
+2025-11-23 06:55:30,728 [WARNING] Rate limit exceeded for IP
+2025-11-23 09:38:27,829 [INFO] Session created for user from 127.0.0.1
+2025-11-23 09:46:24,159 [ERROR] Database initialization failed: AttributeError
+2025-11-23 09:47:29,811 [ERROR] Database initialization failed: AttributeError
+2025-11-23 09:48:51,828 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 09:48:51,828 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 09:48:51,829 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 09:48:51,829 [WARNING] User: testuser / User2024!Strong
+2025-11-23 09:48:51,864 [INFO] Database initialized successfully
+2025-11-23 09:48:51,864 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 09:48:51,864 [INFO] Environment: development
+2025-11-23 09:48:51,864 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 09:48:51,864 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 09:48:51,865 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 09:49:13,219 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 09:49:13,220 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 09:49:13,220 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 09:49:13,220 [WARNING] User: testuser / User2024!Strong
+2025-11-23 09:49:13,253 [INFO] Database initialized successfully
+2025-11-23 09:49:13,253 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 09:49:13,253 [INFO] Environment: development
+2025-11-23 09:49:13,253 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 09:49:13,253 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 09:49:13,254 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 09:49:40,968 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 09:49:40,969 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 09:49:40,969 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 09:49:40,969 [WARNING] User: testuser / User2024!Strong
+2025-11-23 09:49:41,006 [INFO] Database initialized successfully
+2025-11-23 09:49:41,006 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 09:49:41,006 [INFO] Environment: development
+2025-11-23 09:49:41,006 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 09:49:41,007 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 09:49:41,007 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 09:49:55,290 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 09:49:55,291 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 09:49:55,291 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 09:49:55,291 [WARNING] User: testuser / User2024!Strong
+2025-11-23 09:49:55,322 [INFO] Database initialized successfully
+2025-11-23 09:49:55,322 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 09:49:55,323 [INFO] Environment: development
+2025-11-23 09:49:55,323 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 09:49:55,323 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 09:49:55,323 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 09:51:15,326 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 09:51:15,327 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 09:51:15,327 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 09:51:15,327 [WARNING] User: testuser / User2024!Strong
+2025-11-23 09:51:15,354 [INFO] Database initialized successfully
+2025-11-23 09:51:15,355 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 09:51:15,355 [INFO] Environment: development
+2025-11-23 09:51:15,355 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 09:51:15,355 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 09:51:15,355 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 09:55:53,562 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 09:55:53,563 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 09:55:53,563 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 09:55:53,563 [WARNING] User: testuser / User2024!Strong
+2025-11-23 09:55:53,594 [INFO] Database initialized successfully
+2025-11-23 09:55:53,595 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 09:55:53,595 [INFO] Environment: development
+2025-11-23 09:55:53,596 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 09:55:53,596 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 09:55:53,596 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 09:55:54,024 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 09:55:54,025 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 09:55:54,025 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 09:55:54,025 [WARNING] User: testuser / User2024!Strong
+2025-11-23 09:55:54,053 [INFO] Database initialized successfully
+2025-11-23 09:55:54,054 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 09:55:54,055 [INFO] Environment: development
+2025-11-23 09:55:54,055 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 09:55:54,055 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 09:55:54,055 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 09:56:52,993 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 09:56:52,994 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 09:56:52,994 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 09:56:52,994 [WARNING] User: testuser / User2024!Strong
+2025-11-23 09:56:53,333 [INFO] New user account created with role 'admin'
+2025-11-23 09:56:53,333 [INFO] Default admin account created
+2025-11-23 09:56:53,637 [INFO] New user account created with role 'analyst'
+2025-11-23 09:56:53,637 [INFO] Default analyst account created
+2025-11-23 09:56:53,966 [INFO] New user account created with role 'user'
+2025-11-23 09:56:53,967 [INFO] Default user account created
+2025-11-23 09:56:54,024 [INFO] Database initialized successfully
+2025-11-23 09:56:54,024 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 09:56:54,024 [INFO] Environment: development
+2025-11-23 09:56:54,025 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 09:56:54,025 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 09:56:54,025 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 09:56:54,427 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 09:56:54,427 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 09:56:54,427 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 09:56:54,428 [WARNING] User: testuser / User2024!Strong
+2025-11-23 09:56:54,472 [INFO] Database initialized successfully
+2025-11-23 09:56:54,473 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 09:56:54,474 [INFO] Environment: development
+2025-11-23 09:56:54,474 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 09:56:54,474 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 09:56:54,474 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 10:16:39,336 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 10:16:39,337 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 10:16:39,337 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 10:16:39,337 [WARNING] User: testuser / User2024!Strong
+2025-11-23 10:16:39,374 [INFO] Database initialized successfully
+2025-11-23 10:16:39,374 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 10:16:39,375 [INFO] Environment: development
+2025-11-23 10:16:39,375 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 10:16:39,375 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 10:16:39,375 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 10:16:39,823 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 10:16:39,823 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 10:16:39,823 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 10:16:39,823 [WARNING] User: testuser / User2024!Strong
+2025-11-23 10:16:39,859 [INFO] Database initialized successfully
+2025-11-23 10:16:39,860 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 10:16:39,860 [INFO] Environment: development
+2025-11-23 10:16:39,860 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 10:16:39,861 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 10:16:39,861 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 10:17:55,388 [ERROR] Login error: OperationalError
+2025-11-23 10:17:58,712 [ERROR] Login error: OperationalError
+2025-11-23 10:17:59,462 [ERROR] Login error: OperationalError
+2025-11-23 10:18:09,778 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 10:18:09,779 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 10:18:09,779 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 10:18:09,779 [WARNING] User: testuser / User2024!Strong
+2025-11-23 10:18:10,089 [INFO] New user account created with role 'admin'
+2025-11-23 10:18:10,089 [INFO] Default admin account created
+2025-11-23 10:18:10,394 [INFO] New user account created with role 'analyst'
+2025-11-23 10:18:10,394 [INFO] Default analyst account created
+2025-11-23 10:18:10,707 [INFO] New user account created with role 'user'
+2025-11-23 10:18:10,707 [INFO] Default user account created
+2025-11-23 10:18:10,746 [INFO] Database initialized successfully
+2025-11-23 10:18:10,746 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 10:18:10,747 [INFO] Environment: development
+2025-11-23 10:18:10,747 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 10:18:10,748 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 10:18:10,748 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 10:18:11,220 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 10:18:11,222 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 10:18:11,222 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 10:18:11,222 [WARNING] User: testuser / User2024!Strong
+2025-11-23 10:18:11,260 [INFO] Database initialized successfully
+2025-11-23 10:18:11,260 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 10:18:11,260 [INFO] Environment: development
+2025-11-23 10:18:11,260 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 10:18:11,261 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 10:18:11,261 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 10:18:33,498 [WARNING] 🟠 ALERT: BRUTE_FORCE_ATTACK | HIGH
+2025-11-23 10:18:33,503 [INFO] 📧 SECURITY ALERT: BRUTE_FORCE_ATTACK [high]
+2025-11-23 10:18:38,011 [WARNING] Rate limit exceeded for IP
+2025-11-23 10:24:29,251 [INFO] Session created for user from 127.0.0.1
+2025-11-23 10:25:38,805 [INFO] Session created for user from 127.0.0.1
+2025-11-23 10:26:15,749 [WARNING] 🟠 ALERT: BRUTE_FORCE_ATTACK | HIGH
+2025-11-23 10:26:15,753 [INFO] 📧 SECURITY ALERT: BRUTE_FORCE_ATTACK [high]
+2025-11-23 10:26:16,929 [WARNING] Rate limit exceeded for IP
+2025-11-23 10:30:30,984 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 10:30:30,984 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 10:30:30,984 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 10:30:30,985 [WARNING] User: testuser / User2024!Strong
+2025-11-23 10:30:31,022 [INFO] Database initialized successfully
+2025-11-23 10:30:31,022 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 10:30:31,023 [INFO] Environment: development
+2025-11-23 10:30:31,023 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 10:30:31,023 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 10:30:31,023 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 10:30:31,627 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 10:30:31,627 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 10:30:31,628 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 10:30:31,628 [WARNING] User: testuser / User2024!Strong
+2025-11-23 10:30:31,677 [INFO] Database initialized successfully
+2025-11-23 10:30:31,677 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 10:30:31,677 [INFO] Environment: development
+2025-11-23 10:30:31,678 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 10:30:31,678 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 10:30:31,678 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 10:30:41,496 [ERROR] Login error: AttributeError
+2025-11-23 10:30:49,597 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 10:30:49,598 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 10:30:49,598 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 10:30:49,599 [WARNING] User: testuser / User2024!Strong
+2025-11-23 10:30:49,648 [INFO] Database initialized successfully
+2025-11-23 10:30:49,648 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 10:30:49,649 [INFO] Environment: development
+2025-11-23 10:30:49,649 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 10:30:49,649 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 10:30:49,649 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 10:30:50,175 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 10:30:50,176 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 10:30:50,176 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 10:30:50,176 [WARNING] User: testuser / User2024!Strong
+2025-11-23 10:30:50,222 [INFO] Database initialized successfully
+2025-11-23 10:30:50,222 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 10:30:50,223 [INFO] Environment: development
+2025-11-23 10:30:50,223 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 10:30:50,223 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 10:30:50,223 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 10:30:53,615 [ERROR] Login error: AttributeError
+2025-11-23 10:30:58,227 [ERROR] Login error: AttributeError
+2025-11-23 10:31:05,794 [ERROR] Login error: AttributeError
+2025-11-23 10:33:24,760 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 10:33:24,761 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 10:33:24,761 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 10:33:24,761 [WARNING] User: testuser / User2024!Strong
+2025-11-23 10:33:24,803 [INFO] Database initialized successfully
+2025-11-23 10:33:24,804 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 10:33:24,804 [INFO] Environment: development
+2025-11-23 10:33:24,804 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 10:33:24,804 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 10:33:24,804 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 10:33:30,675 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 10:33:30,676 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 10:33:30,676 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 10:33:30,676 [WARNING] User: testuser / User2024!Strong
+2025-11-23 10:33:30,719 [INFO] Database initialized successfully
+2025-11-23 10:33:30,719 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 10:33:30,719 [INFO] Environment: development
+2025-11-23 10:33:30,720 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 10:33:30,720 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 10:33:30,720 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 10:33:31,265 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 10:33:31,266 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 10:33:31,266 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 10:33:31,266 [WARNING] User: testuser / User2024!Strong
+2025-11-23 10:33:31,316 [INFO] Database initialized successfully
+2025-11-23 10:33:31,317 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 10:33:31,317 [INFO] Environment: development
+2025-11-23 10:33:31,317 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 10:33:31,317 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 10:33:31,318 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 10:33:40,068 [ERROR] Login error: AttributeError
+2025-11-23 10:33:41,312 [ERROR] Login error: AttributeError
+2025-11-23 10:33:42,809 [ERROR] Login error: AttributeError
+2025-11-23 10:33:42,961 [ERROR] Login error: AttributeError
+2025-11-23 10:33:43,129 [ERROR] Login error: AttributeError
+2025-11-23 10:33:43,303 [ERROR] Login error: AttributeError
+2025-11-23 10:33:43,450 [ERROR] Login error: AttributeError
+2025-11-23 10:33:43,621 [ERROR] Login error: AttributeError
+2025-11-23 10:33:43,784 [ERROR] Login error: AttributeError
+2025-11-23 10:33:43,949 [ERROR] Login error: AttributeError
+2025-11-23 10:33:44,098 [WARNING] Rate limit exceeded for IP
+2025-11-23 10:34:50,214 [ERROR] Login error: AttributeError
+2025-11-23 10:34:51,775 [ERROR] Login error: AttributeError
+2025-11-23 10:52:16,817 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 10:52:16,818 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 10:52:16,818 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 10:52:16,818 [WARNING] User: testuser / User2024!Strong
+2025-11-23 10:52:16,849 [INFO] Database initialized successfully
+2025-11-23 10:52:16,850 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 10:52:16,850 [INFO] Environment: development
+2025-11-23 10:52:16,850 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 10:52:16,850 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 10:52:16,850 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 10:52:17,270 [WARNING] 🔐 DEVELOPMENT MODE - Test Credentials:
+2025-11-23 10:52:17,270 [WARNING] Admin: admin / Admin2024!Strong
+2025-11-23 10:52:17,270 [WARNING] Analyst: analyst / Analyst2024!Strong
+2025-11-23 10:52:17,271 [WARNING] User: testuser / User2024!Strong
+2025-11-23 10:52:17,302 [INFO] Database initialized successfully
+2025-11-23 10:52:17,303 [INFO] DS System starting on 127.0.0.1:5000
+2025-11-23 10:52:17,303 [INFO] Environment: development
+2025-11-23 10:52:17,303 [INFO] Default accounts created with PASSWORD CHANGE REQUIRED
+2025-11-23 10:52:17,304 [INFO] Set IDS_ADMIN_PASSWORD, IDS_ANALYST_PASSWORD, IDS_USER_PASSWORD environment variables for production
+2025-11-23 10:52:17,304 [INFO] CORS Origins: http://localhost:5000
+2025-11-23 10:53:39,556 [INFO] Session created for user from 127.0.0.1
+2025-11-23 10:54:05,598 [INFO] Session created for user from 127.0.0.1
+2025-11-23 10:54:40,663 [INFO] Session created for user from 127.0.0.1
+2025-11-23 10:55:19,244 [INFO] 📧 NOTIFICATION: Account locked
+2025-11-23 10:55:19,253 [INFO] Account locked by admin
+2025-11-23 10:56:19,060 [WARNING] 🟢 ALERT: BRUTE_FORCE_ATTACK | LOW
+2025-11-23 10:56:19,062 [INFO] 📧 SECURITY ALERT: BRUTE_FORCE_ATTACK [low]
+2025-11-23 10:57:02,127 [WARNING] 🟢 ALERT: BRUTE_FORCE_ATTACK | LOW
+2025-11-23 10:57:02,129 [INFO] 📧 SECURITY ALERT: BRUTE_FORCE_ATTACK [low]
+2025-11-23 10:57:41,704 [INFO] Alert #4 escalated
+2025-11-23 10:57:41,737 [INFO] Alert #3 escalated
+2025-11-23 10:57:41,767 [INFO] Alert #2 escalated
+2025-11-23 10:57:41,799 [INFO] Alert #1 escalated
+2025-11-23 10:58:14,273 [INFO] Alert #4 escalated
+2025-11-23 10:58:14,303 [INFO] Alert #3 escalated
+2025-11-23 10:58:14,333 [INFO] Alert #2 escalated
+2025-11-23 10:58:14,367 [INFO] Alert #1 escalated
+2025-11-23 10:58:32,274 [INFO] Alert #4 escalated
+2025-11-23 10:58:32,299 [INFO] Alert #3 escalated
+2025-11-23 10:58:32,334 [INFO] Alert #2 escalated
+2025-11-23 10:58:32,362 [INFO] Alert #1 escalated
+2025-11-23 11:03:58,597 [INFO] IDS thresholds reloaded

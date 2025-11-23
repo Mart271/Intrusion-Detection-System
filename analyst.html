@@ -9,82 +9,237 @@
 <body>
     <nav>
         <div class="nav-container">
-            <div class="nav-brand">
-                🔍 IDS - Security Analyst Portal
-            </div>
-            <ul class="nav-links">
-                <li><button class="logout-btn" onclick="logout()">Logout</button></li>
-            </ul>
+            <div class="nav-brand">🔍 IDS - Security Analyst Portal</div>
         </div>
     </nav>
 
     <div class="container">
+        <!-- Header -->
         <div class="dashboard-header">
-            <h2>Security Analysis Dashboard</h2>
-            <button class="refresh-btn" onclick="loadAnalystData()">🔄 Refresh</button>
+            <div>
+                <h2>Security Analysis Dashboard</h2>
+                <p style="color: #94a3b8; margin-top: 0.5rem;">Incident Review • Alert Management • Data Export • Reporting</p>
+            </div>
+            <button class="refresh-btn" onclick="loadIncidents()">🔄 Refresh</button>
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-card red">
-                <h3>Critical Alerts</h3>
-                <div class="stat-value" id="criticalCount">0</div>
-            </div>
-            <div class="stat-card red">
-                <h3>High Severity</h3>
-                <div class="stat-value" id="highCount">0</div>
-            </div>
-            <div class="stat-card orange">
-                <h3>Total Alerts</h3>
-                <div class="stat-value" id="totalAlerts">0</div>
-            </div>
-            <div class="stat-card green">
-                <h3>Success Rate</h3>
-                <div class="stat-value" id="successRate">-</div>
+        <!-- Tabs -->
+        <div class="section" style="padding: 0.5rem; margin-bottom: 2rem;">
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="tab-btn active" onclick="showTab('incidents')">⚠️ Incident Review</button>
+                <button class="tab-btn" onclick="showTab('export')">📥 Data Export</button>
+                <button class="tab-btn" onclick="showTab('reports')">📊 Reporting</button>
             </div>
         </div>
 
-        <div class="section">
-            <h2>🚨 Active Security Alerts</h2>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Alert Type</th>
-                            <th>User</th>
-                            <th>IP Address</th>
-                            <th>Severity</th>
-                            <th>Time</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="alertsTable">
-                        <tr><td colspan="6" class="empty-state">Loading...</td></tr>
-                    </tbody>
-                </table>
+        <!-- Tab 1: Incident Review -->
+        <div id="incidentsTab" class="tab-content active">
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card red">
+                    <h3>Critical Unreviewed</h3>
+                    <div class="stat-value" id="criticalUnreviewed">0</div>
+                </div>
+                <div class="stat-card orange">
+                    <h3>Pending Review</h3>
+                    <div class="stat-value" id="pendingReview">0</div>
+                </div>
+                <div class="stat-card orange">
+                    <h3>Escalated</h3>
+                    <div class="stat-value" id="escalated">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Archived</h3>
+                    <div class="stat-value" id="archived">0</div>
+                </div>
+            </div>
+
+            <!-- Filters & Actions -->
+            <div class="section">
+                <h2>🔍 Filter & Search Incidents</h2>
+                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Search Incidents</label>
+                        <input type="text" id="searchInput" placeholder="Search by username, IP, or alert type...">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Severity</label>
+                        <select id="severityFilter">
+                            <option value="all">All Severities</option>
+                            <option value="critical">Critical</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Status</label>
+                        <select id="statusFilter">
+                            <option value="all">All Status</option>
+                            <option value="unreviewed">Unreviewed</option>
+                            <option value="escalated">Escalated</option>
+                            <option value="archived">Archived</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem;">
+                    <button id="escalateBtn" class="btn danger" onclick="bulkEscalate()">🚩 Escalate (0)</button>
+                    <button id="archiveBtn" class="btn secondary" onclick="bulkArchive()">📦 Archive (0)</button>
+                    <button id="tagBtn" class="btn" onclick="bulkTag()">🏷️ Tag (0)</button>
+                </div>
+            </div>
+
+            <!-- Incidents Table -->
+            <div class="section">
+                <h2>📋 IDS Incidents Log</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;"><input type="checkbox" id="selectAll" onchange="selectAll()"></th>
+                                <th>Time</th>
+                                <th>Alert Type</th>
+                                <th>Target</th>
+                                <th>Source IP</th>
+                                <th>Severity</th>
+                                <th>Status</th>
+                                <th>Tags</th>
+                            </tr>
+                        </thead>
+                        <tbody id="incidentsTable">
+                            <tr><td colspan="8" class="empty-state">Loading incidents...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div style="padding: 1rem; background: #0f172a; color: #94a3b8; font-size: 0.875rem;">
+                    <span id="incidentCount">Loading...</span>
+                </div>
             </div>
         </div>
 
-        <div class="section">
-            <h2>📋 Recent Login Attempts</h2>
-            <div class="filter-bar">
-                <input type="text" id="logFilter" placeholder="Filter by username or IP..." onkeyup="filterLogs()">
-                <button class="btn" onclick="exportLogs()">📥 Export Logs</button>
+        <!-- Tab 2: Data Export -->
+        <div id="exportTab" class="tab-content">
+            <div class="section">
+                <h2>📥 Data Export for Forensic Analysis</h2>
+                <p style="color: #94a3b8; margin-bottom: 2rem;">Export IDS data in CSV format for forensic investigation, compliance, and legal purposes.</p>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                    <!-- IDS Logs Export -->
+                    <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #334155;">
+                        <h3 style="color: #60a5fa; margin-bottom: 1rem;">📋 IDS Logs Export</h3>
+                        <p style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 1rem;">Export all intrusion detection logs with timestamps, details, and forensic data</p>
+                        <button class="btn" onclick="exportCSV()" style="width: 100%;">Export IDS Logs (CSV)</button>
+                    </div>
+
+                    <!-- Login History -->
+                    <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #334155;">
+                        <h3 style="color: #60a5fa; margin-bottom: 1rem;">🕒 Login History Export</h3>
+                        <p style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 1rem;">Export complete login history with success/failed attempts</p>
+                        <button class="btn" onclick="exportLoginHistory()" style="width: 100%;">Export Login History (CSV)</button>
+                    </div>
+
+                    <!-- Forensic Package -->
+                    <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #334155;">
+                        <h3 style="color: #60a5fa; margin-bottom: 1rem;">🔍 Forensic Package</h3>
+                        <p style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 1rem;">Complete forensic bundle with all logs, alerts, and audit trail</p>
+                        <button class="btn danger" onclick="exportForensicPackage()" style="width: 100%;">Export Full Forensic Package (CSV)</button>
+                    </div>
+
+                    <!-- Filtered Export -->
+                    <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #334155;">
+                        <h3 style="color: #60a5fa; margin-bottom: 1rem;">🔎 Filtered Data Export</h3>
+                        <p style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 1rem;">Export only filtered/selected incidents from the Incident Review tab</p>
+                        <button class="btn secondary" onclick="exportSelected()" style="width: 100%;">Export Selected Incidents</button>
+                    </div>
+                </div>
             </div>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>User</th>
-                            <th>IP Address</th>
-                            <th>Location</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="logsTable">
-                        <tr><td colspan="5" class="empty-state">Loading...</td></tr>
-                    </tbody>
-                </table>
+        </div>
+
+        <!-- Tab 3: Reports -->
+        <div id="reportsTab" class="tab-content">
+            <div class="section">
+                <h2>📊 Security Reports & Analytics</h2>
+                <p style="color: #94a3b8; margin-bottom: 2rem;">Generate comprehensive security reports for management review, compliance, and trend analysis.</p>
+
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem;">
+                    <!-- Weekly Report -->
+                    <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #334155;">
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                            <span style="font-size: 2rem;">📅</span>
+                            <div>
+                                <h3 style="color: #60a5fa; margin: 0;">Weekly Summary Report</h3>
+                                <p style="color: #94a3b8; font-size: 0.875rem; margin: 0.25rem 0 0 0;">Last 7 days of IDS activity</p>
+                            </div>
+                        </div>
+                        <ul style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 1rem; padding-left: 1.5rem;">
+                            <li>Login anomaly trends</li>
+                            <li>Top attacked users (Top 10)</li>
+                            <li>Attack pattern distribution</li>
+                            <li>Severity breakdown</li>
+                        </ul>
+                        <button class="btn" onclick="generateWeeklyReport()" style="width: 100%;">Generate Weekly Report</button>
+                    </div>
+
+                    <!-- Monthly Report -->
+                    <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #334155;">
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                            <span style="font-size: 2rem;">📆</span>
+                            <div>
+                                <h3 style="color: #60a5fa; margin: 0;">Monthly Summary Report</h3>
+                                <p style="color: #94a3b8; font-size: 0.875rem; margin: 0.25rem 0 0 0;">Last 30 days of IDS activity</p>
+                            </div>
+                        </div>
+                        <ul style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 1rem; padding-left: 1.5rem;">
+                            <li>Comprehensive trend analysis</li>
+                            <li>Month-over-month comparison</li>
+                            <li>Executive summary</li>
+                            <li>Key recommendations</li>
+                        </ul>
+                        <button class="btn secondary" onclick="generateMonthlyReport()" style="width: 100%;">Generate Monthly Report</button>
+                    </div>
+
+                    <!-- Threat Intelligence -->
+                    <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #334155;">
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                            <span style="font-size: 2rem;">📈</span>
+                            <div>
+                                <h3 style="color: #60a5fa; margin: 0;">Threat Intelligence Report</h3>
+                                <p style="color: #94a3b8; font-size: 0.875rem; margin: 0.25rem 0 0 0;">Attack patterns & predictions</p>
+                            </div>
+                        </div>
+                        <ul style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 1rem; padding-left: 1.5rem;">
+                            <li>Most common attack vectors</li>
+                            <li>Time-based attack patterns</li>
+                            <li>Threat actor profiling</li>
+                        </ul>
+                        <button class="btn" onclick="generateThreatReport()" style="width: 100%;">Generate Threat Report</button>
+                    </div>
+
+                    <!-- Incident Response -->
+                    <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #334155;">
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                            <span style="font-size: 2rem;">⚠️</span>
+                            <div>
+                                <h3 style="color: #60a5fa; margin: 0;">Incident Response Report</h3>
+                                <p style="color: #94a3b8; font-size: 0.875rem; margin: 0.25rem 0 0 0;">Escalated incidents summary</p>
+                            </div>
+                        </div>
+                        <ul style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 1rem; padding-left: 1.5rem;">
+                            <li>All escalated incidents</li>
+                            <li>Response timeline</li>
+                            <li>Actions taken</li>
+                            <li>Impact assessment</li>
+                        </ul>
+                        <button class="btn danger" onclick="generateIncidentReport()" style="width: 100%;">Generate Incident Report</button>
+                    </div>
+                </div>
+
+                <!-- Report Display Area -->
+                <div id="reportDisplay" style="margin-top:2rem;display:none;">
+                    <h3 style="color:#60a5fa;margin-bottom:1rem;">📄 Generated Report</h3>
+                    <div id="reportContent" style="background:#0f172a;padding:1.5rem;border-radius:0.5rem;border:1px solid #334155;overflow-x:auto;color:#e2e8f0;"></div>
+                </div>
             </div>
         </div>
     </div>

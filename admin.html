@@ -8,166 +8,232 @@
 </head>
 <body>
     <nav>
-        <div class="nav-container">
-            <div class="nav-brand">
-                ⚙️ IDS - Admin Dashboard
+        <div class="nav-brand">⚙️ IDS - Admin Dashboard</div>
+        <div class="nav-actions">
+            <div id="refreshStatus" class="refresh-status">
+                <span class="indicator"></span> Auto-Refresh: ON
             </div>
-            <ul class="nav-links">
-                <li><button class="logout-btn" onclick="logout()">Logout</button></li>
-            </ul>
         </div>
     </nav>
 
     <div class="container">
         <div class="dashboard-header">
             <h2>System Administration</h2>
-            <div style="display: flex; gap: 1rem; align-items: center;">
-                <button class="refresh-btn" onclick="loadAdminData()">🔄 Manual Refresh</button>
-                <div id="refreshStatus" style="color: #60a5fa; font-weight: 600; font-size: 0.9rem;">
-                    🟢 Auto-Refresh: ON (500ms)
+            <div class="control-buttons">
+                <button onclick="loadAdminData()">🔄 Refresh</button>
+                <button onclick="showTab('monitoring')" class="tab-btn active" data-tab="monitoring">📊 Monitoring</button>
+                <button onclick="showTab('mitigation')" class="tab-btn" data-tab="mitigation">🛡️ Mitigation</button>
+                <button onclick="showTab('policy')" class="tab-btn" data-tab="policy">⚙️ Policy</button>
+                <button onclick="showTab('reports')" class="tab-btn" data-tab="reports">📈 Reports</button>
+            </div>
+        </div>
+
+        <!-- TAB 1: IDS MONITORING -->
+        <div id="monitoringTab" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card"><h3>Total Logins</h3><div class="stat-value" id="totalLogins">-</div></div>
+                <div class="stat-card red"><h3>Failed Attempts</h3><div class="stat-value" id="failedAttempts">-</div></div>
+                <div class="stat-card orange"><h3>Active Alerts</h3><div class="stat-value" id="activeAlerts">-</div></div>
+                <div class="stat-card red"><h3>Unreviewed</h3><div class="stat-value" id="unreviewedDetections">-</div></div>
+                <div class="stat-card orange"><h3>Blocked IPs</h3><div class="stat-value" id="blockedIPs">-</div></div>
+                <div class="stat-card red"><h3>Locked Users</h3><div class="stat-value" id="lockedUsers">-</div></div>
+                <div class="stat-card orange"><h3>Rate Limited</h3><div class="stat-value" id="rateLimitedIPs">-</div></div>
+            </div>
+
+            <div class="section">
+                <h2>👥 User Activity Monitor</h2>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Username</th><th>Last IP</th><th>Failed</th><th>Last Activity</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody id="usersTable"><tr><td colspan="6" class="empty-state">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🚨 Suspicious IP Addresses</h2>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>IP Address</th><th>Failed Attempts</th><th>First Seen</th><th>Actions</th></tr></thead>
+                        <tbody id="blockedIPsTable"><tr><td colspan="4" class="empty-state">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🔒 Locked Accounts</h2>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Username</th><th>Locked At</th><th>Auto Unlock</th><th>Actions</th></tr></thead>
+                        <tbody id="lockedAccountsTable"><tr><td colspan="4" class="empty-state">Loading...</td></tr></tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
-        <!-- Stats Grid -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h3>Total Logins</h3>
-                <div class="stat-value" id="totalLogins">-</div>
-            </div>
-            <div class="stat-card red">
-                <h3>Failed Attempts</h3>
-                <div class="stat-value" id="failedAttempts">-</div>
-            </div>
-            <div class="stat-card orange">
-                <h3>Active Alerts</h3>
-                <div class="stat-value" id="activeAlerts">-</div>
-            </div>
-            <div class="stat-card red">
-                <h3>Unreviewed Detections</h3>
-                <div class="stat-value" id="unreviewedDetections">-</div>
-            </div>
-            <div class="stat-card orange">
-                <h3>Blocked IPs</h3>
-                <div class="stat-value" id="blockedIPs">-</div>
-            </div>
-            <div class="stat-card red">
-                <h3>Locked Users</h3>
-                <div class="stat-value" id="lockedUsers">-</div>
-            </div>
-            <div class="stat-card orange">
-                <h3>Rate Limited IPs</h3>
-                <div class="stat-value" id="rateLimitedIPs">-</div>
-            </div>
-        </div>
-
-        <!-- User Activity Monitor -->
-        <div class="section">
-            <h2>👥 User Activity Monitor</h2>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Username</th>
-                            <th>Last IP</th>
-                            <th>Failed Attempts</th>
-                            <th>Last Activity</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="usersTable">
-                        <tr><td colspan="6" class="empty-state">Loading...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Suspicious IPs Monitor -->
-        <div class="section">
-            <h2>🚨 Suspicious IP Addresses</h2>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>IP Address</th>
-                            <th>Failed Attempts</th>
-                            <th>First Seen</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="blockedIPsTable">
-                        <tr><td colspan="4" class="empty-state">Loading...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Locked Accounts Monitor -->
-        <div class="section">
-            <h2>🔒 Locked Accounts</h2>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Username</th>
-                            <th>Locked At</th>
-                            <th>Auto Unlock At</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lockedAccountsTable">
-                        <tr><td colspan="4" class="empty-state">Loading...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Manual Enforcement Actions -->
-        <div class="section">
-            <h2>🛡️ Manual Enforcement Actions</h2>
-            <p style="color: #94a3b8; margin-bottom: 1.5rem;">
-                Based on analyst recommendations, administrators can manually block IPs or lock accounts.
-                All actions are logged in the audit trail.
-            </p>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem;">
-                <!-- IP Management -->
-                <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #334155;">
-                    <h3 style="color: #60a5fa; margin-bottom: 1rem;">🌐 IP Address Management</h3>
-                    <div class="alert" id="ipAlert"></div>
+        <!-- TAB 2: MITIGATION & RESPONSE -->
+        <div id="mitigationTab" class="tab-content">
+            <div class="section">
+                <h2>⏱️ Cooldown & Rate Limiting Settings</h2>
+                <p style="color:#94a3b8;margin-bottom:1.5rem;">Configure temporary delays before new login attempts are accepted after suspicious activity.</p>
+                <div class="alert" id="cooldownAlert"></div>
+                <div class="form-row">
                     <div class="form-group">
-                        <label>IP Address</label>
-                        <input type="text" id="ipAddress" placeholder="192.168.1.100">
+                        <label>Cooldown Period (seconds)</label>
+                        <input type="number" id="cooldownPeriod" min="60" max="3600" value="600">
+                        <small>Delay after failed attempts (10-60 min recommended)</small>
                     </div>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn danger" onclick="blockIP()" style="flex: 1;">🚫 Block IP</button>
-                        <button class="btn success" onclick="unblockIP()" style="flex: 1;">✅ Unblock IP</button>
+                    <div class="form-group">
+                        <label>Rate Limit Requests</label>
+                        <input type="number" id="rateLimitRequests" min="5" max="100" value="10">
+                        <small>Max requests per window before blocking</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Rate Limit Window (seconds)</label>
+                        <input type="number" id="rateLimitWindow" min="30" max="300" value="60">
+                        <small>Time window for rate limiting</small>
                     </div>
                 </div>
+                <button class="success" onclick="saveCooldownSettings()">💾 Save Cooldown Policy</button>
+            </div>
 
-                <!-- Account Management -->
-                <div style="background: #0f172a; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #334155;">
-                    <h3 style="color: #60a5fa; margin-bottom: 1rem;">👤 Account Management</h3>
-                    <div class="alert" id="accountAlert"></div>
-                    <div class="form-group">
-                        <label>Username</label>
-                        <input type="text" id="username" placeholder="username">
+            <div class="section">
+                <h2>🚦 Rate Limiter Status</h2>
+                <p style="color:#94a3b8;margin-bottom:1.5rem;">View and manage currently rate-limited IP addresses.</p>
+                <div class="stats-grid" style="margin-bottom:1.5rem;">
+                    <div class="stat-card"><h3>Max Requests</h3><div class="stat-value" id="rlMaxRequests">-</div></div>
+                    <div class="stat-card"><h3>Window (sec)</h3><div class="stat-value" id="rlWindow">-</div></div>
+                    <div class="stat-card"><h3>Block Duration</h3><div class="stat-value" id="rlBlockDuration">-</div></div>
+                    <div class="stat-card orange"><h3>Active IPs</h3><div class="stat-value" id="rlActiveIPs">-</div></div>
+                    <div class="stat-card red"><h3>Blocked IPs</h3><div class="stat-value" id="rlBlockedIPs">-</div></div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>IP Address</th><th>Blocked Until</th><th>Remaining (sec)</th><th>Actions</th></tr></thead>
+                        <tbody id="rateLimitedTable"><tr><td colspan="4" class="empty-state">No rate-limited IPs</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🛡️ Manual Enforcement Actions</h2>
+                <p style="color:#94a3b8;margin-bottom:1.5rem;">Block IPs or lock accounts based on analyst recommendations.</p>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:2rem;">
+                    <div style="background:#0f172a;padding:1.5rem;border-radius:0.5rem;border:1px solid #334155;">
+                        <h3 style="color:#60a5fa;margin-bottom:1rem;">🌐 IP Address Management</h3>
+                        <div class="alert" id="ipAlert"></div>
+                        <div class="form-group"><label>IP Address</label><input type="text" id="ipAddress" placeholder="192.168.1.100"></div>
+                        <div class="form-group"><label>Reason</label><input type="text" id="ipReason" placeholder="Suspicious activity"></div>
+                        <div style="display:flex;gap:0.5rem;">
+                            <button class="danger" onclick="blockIP()" style="flex:1;">🚫 Block IP</button>
+                            <button class="success" onclick="unblockIP()" style="flex:1;">✅ Unblock IP</button>
+                        </div>
                     </div>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn danger" onclick="lockAccount()" style="flex: 1;">🔒 Lock Account</button>
-                        <button class="btn success" onclick="unlockAccount()" style="flex: 1;">🔓 Unlock Account</button>
+                    <div style="background:#0f172a;padding:1.5rem;border-radius:0.5rem;border:1px solid #334155;">
+                        <h3 style="color:#60a5fa;margin-bottom:1rem;">👤 Account Management</h3>
+                        <div class="alert" id="accountAlert"></div>
+                        <div class="form-group"><label>Username</label><input type="text" id="username" placeholder="username"></div>
+                        <div class="form-group"><label>Reason</label><input type="text" id="lockReason" placeholder="Security precaution"></div>
+                        <div style="display:flex;gap:0.5rem;">
+                            <button class="danger" onclick="lockAccount()" style="flex:1;">🔒 Lock Account</button>
+                            <button class="success" onclick="unlockAccount()" style="flex:1;">🔓 Unlock Account</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Export & Reports -->
-        <div class="section">
-            <h2>📥 Export & Reports</h2>
-            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                <button class="btn" onclick="exportForensic()">📄 Export Forensic Logs (CSV)</button>
-                <button class="btn" onclick="exportAlerts()">🚨 Export Alerts (CSV)</button>
+        <!-- TAB 3: POLICY MANAGEMENT -->
+        <div id="policyTab" class="tab-content">
+            <div class="section">
+                <h2>⚙️ IDS Threshold Configuration</h2>
+                <p style="color:#94a3b8;margin-bottom:1.5rem;">Configure detection thresholds for failed attempts and lockout durations.</p>
+                <div class="alert" id="configAlert"></div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Max Failed Attempts</label>
+                        <input type="number" id="maxFailedAttempts" min="1" max="20" value="3">
+                        <small>Triggers alert after this many failures</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Detection Window (seconds)</label>
+                        <input type="number" id="failedAttemptsWindow" min="30" max="600" value="120">
+                        <small>Time window for counting attempts</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Lockout Duration (seconds)</label>
+                        <input type="number" id="lockoutDuration" min="60" max="3600" value="900">
+                        <small>How long accounts stay locked</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Distributed Attack Threshold</label>
+                        <input type="number" id="distributedThreshold" min="3" max="20" value="5">
+                        <small>Unique IPs to trigger distributed alert</small>
+                    </div>
+                </div>
+                <button class="success" onclick="saveThresholdSettings()">💾 Save Threshold Settings</button>
+            </div>
+
+            <div class="section">
+                <h2>📋 Detection Rules Management</h2>
+                <p style="color:#94a3b8;margin-bottom:1.5rem;">Create, edit, and manage IDS detection rules.</p>
+                <div class="alert" id="ruleAlert"></div>
+                
+                <div style="background:#0f172a;padding:1.5rem;border-radius:0.5rem;border:1px solid #334155;margin-bottom:1.5rem;">
+                    <h3 style="color:#60a5fa;margin-bottom:1rem;">➕ Add New Detection Rule</h3>
+                    <div class="form-row">
+                        <div class="form-group"><label>Rule Name</label><input type="text" id="ruleName" placeholder="e.g., Rapid Failed Attempts"></div>
+                        <div class="form-group"><label>Severity</label>
+                            <select id="ruleSeverity"><option value="low">Low</option><option value="medium">Medium</option><option value="high" selected>High</option><option value="critical">Critical</option></select>
+                        </div>
+                        <div class="form-group"><label>Action</label>
+                            <select id="ruleAction"><option value="alert">Alert Only</option><option value="lock">Lock Account</option><option value="block">Block IP</option></select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Threshold</label><input type="number" id="ruleThreshold" min="1" max="100" value="3"></div>
+                        <div class="form-group"><label>Time Window (s)</label><input type="number" id="ruleTimeWindow" min="30" max="3600" value="120"></div>
+                    </div>
+                    <div class="form-group"><label>Condition Description</label><input type="text" id="ruleCondition" placeholder="e.g., IF user fails 3+ times in 2 minutes THEN lock"></div>
+                    <button onclick="addRule()">➕ Add Rule</button>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>ID</th><th>Rule Name</th><th>Condition</th><th>Severity</th><th>Action</th><th>Threshold</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody id="rulesTable"><tr><td colspan="8" class="empty-state">Loading rules...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: REPORTS -->
+        <div id="reportsTab" class="tab-content">
+            <div class="section">
+                <h2>📊 Security Reports</h2>
+                <p style="color:#94a3b8;margin-bottom:1.5rem;">Generate comprehensive security reports for review and compliance.</p>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;">
+                    <div style="background:#0f172a;padding:1.5rem;border-radius:0.5rem;border:1px solid #334155;">
+                        <h3 style="color:#60a5fa;margin-bottom:1rem;">📅 Weekly Summary</h3>
+                        <p style="color:#94a3b8;font-size:0.875rem;margin-bottom:1rem;">Last 7 days: login trends, top attacked users, severity breakdown</p>
+                        <button onclick="generateWeeklyReport()" style="width:100%;">Generate Weekly Report</button>
+                    </div>
+                    <div style="background:#0f172a;padding:1.5rem;border-radius:0.5rem;border:1px solid #334155;">
+                        <h3 style="color:#60a5fa;margin-bottom:1rem;">📆 Monthly Summary</h3>
+                        <p style="color:#94a3b8;font-size:0.875rem;margin-bottom:1rem;">Last 30 days: comprehensive analysis, month-over-month comparison</p>
+                        <button onclick="generateMonthlyReport()" style="width:100%;">Generate Monthly Report</button>
+                    </div>
+                    <div style="background:#0f172a;padding:1.5rem;border-radius:0.5rem;border:1px solid #334155;">
+                        <h3 style="color:#60a5fa;margin-bottom:1rem;">📥 Data Export</h3>
+                        <p style="color:#94a3b8;font-size:0.875rem;margin-bottom:1rem;">Export forensic logs and alerts for investigation</p>
+                        <button onclick="exportForensic()" style="width:100%;margin-bottom:0.5rem;">Export Forensic Logs (CSV)</button>
+                        <button onclick="exportAlerts()" style="width:100%;">Export Alerts (CSV)</button>
+                    </div>
+                </div>
+                <div id="reportDisplay" style="margin-top:2rem;display:none;">
+                    <h3 style="color:#60a5fa;margin-bottom:1rem;">📄 Generated Report</h3>
+                    <div id="reportContent" style="background:#0f172a;padding:1.5rem;border-radius:0.5rem;border:1px solid #334155;overflow-x:auto;color:#e2e8f0;"></div>
+                </div>
             </div>
         </div>
     </div>
