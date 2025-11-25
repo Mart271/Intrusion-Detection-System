@@ -1816,6 +1816,8 @@ class IDSApplication:
 
 if __name__ == '__main__':
     ids = IDSApplication()
+    app = IDSApplication().app
+
     
     # SECURITY FIX: Don't log credentials
     logger.info(f"DS System starting on {config.HOST}:{config.PORT}")
