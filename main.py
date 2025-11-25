@@ -1827,3 +1827,5 @@ if __name__ == '__main__':
     logger.info(f"CORS Origins: {config.CORS_ORIGINS}")
     
     ids.run()
+
+app = IDSApplication().app    
