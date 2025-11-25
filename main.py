@@ -815,42 +815,241 @@ class IPLocationService:
 class ReportGenerator:
     @staticmethod
     def weekly_report() -> Dict:
+        """Generate comprehensive weekly security report"""
         week_ago = (datetime.now() - timedelta(days=7)).isoformat()
-        total = db.query_one('SELECT COUNT(*) as c FROM login_events WHERE timestamp > ?', (week_ago,))['c']
-        failed = db.query_one("SELECT COUNT(*) as c FROM login_events WHERE status='failed' AND timestamp > ?", (week_ago,))['c']
+        return ReportGenerator._generate_report(week_ago, 'weekly')
+    
+    @staticmethod
+    def monthly_report() -> Dict:
+        """Generate comprehensive monthly security report"""
+        month_ago = (datetime.now() - timedelta(days=30)).isoformat()
+        return ReportGenerator._generate_report(month_ago, 'monthly')
+    
+    @staticmethod
+    def _generate_report(since_date: str, report_type: str) -> Dict:
+        """Generate comprehensive security report"""
+        # Login statistics
+        total = db.query_one('SELECT COUNT(*) as c FROM login_events WHERE timestamp > ?', (since_date,))['c']
+        failed = db.query_one("SELECT COUNT(*) as c FROM login_events WHERE status='failed' AND timestamp > ?", (since_date,))['c']
+        success = total - failed
+        
+        # Alert statistics by severity
+        severity_breakdown = {}
+        for severity in ['critical', 'high', 'medium', 'low']:
+            count = db.query_one(
+                'SELECT COUNT(*) as c FROM alerts WHERE timestamp > ? AND severity = ?', 
+                (since_date, severity)
+            )['c']
+            severity_breakdown[severity] = count
+        
+        # Top attacked users
         top_attacked = db.query('''
             SELECT username, COUNT(*) as count FROM login_events 
-            WHERE status='failed' AND timestamp > ? GROUP BY username ORDER BY count DESC LIMIT 10
-        ''', (week_ago,))
-        severity_breakdown = db.query('SELECT severity, COUNT(*) as c FROM alerts WHERE timestamp > ? GROUP BY severity', (week_ago,))
+            WHERE status='failed' AND timestamp > ? 
+            GROUP BY username 
+            ORDER BY count DESC 
+            LIMIT 10
+        ''', (since_date,))
+        
+        # Alert type breakdown
+        alert_types = db.query('''
+            SELECT alert_type, COUNT(*) as count 
+            FROM alerts 
+            WHERE timestamp > ? 
+            GROUP BY alert_type 
+            ORDER BY count DESC
+        ''', (since_date,))
+        
+        # Top attacking IPs
+        top_ips = db.query('''
+            SELECT ip_address, COUNT(*) as count 
+            FROM login_events 
+            WHERE status='failed' AND timestamp > ? 
+            GROUP BY ip_address 
+            ORDER BY count DESC 
+            LIMIT 10
+        ''', (since_date,))
+        
+        # Hourly distribution (for trend analysis)
+        hourly_dist = db.query('''
+            SELECT strftime('%H', timestamp) as hour, COUNT(*) as count 
+            FROM login_events 
+            WHERE timestamp > ? 
+            GROUP BY hour 
+            ORDER BY hour
+        ''', (since_date,))
+        
+        # Blocked IPs and Locked Accounts
+        blocked_ips_count = db.query_one(
+            'SELECT COUNT(*) as c FROM blocked_ips_log WHERE blocked_at > ? AND is_active=1', 
+            (since_date,)
+        )['c']
+        
+        locked_accounts_count = db.query_one(
+            'SELECT COUNT(*) as c FROM locked_accounts_log WHERE locked_at > ? AND is_active=1', 
+            (since_date,)
+        )['c']
+        
         return {
-            'report_type': 'weekly', 'period': f'{week_ago[:10]} to {datetime.now().strftime("%Y-%m-%d")}',
-            'total_logins': total, 'failed_logins': failed,
-            'success_rate': f'{((total - failed) / total * 100):.2f}%' if total > 0 else '0%',
+            'report_type': report_type,
+            'period': f'{since_date[:10]} to {datetime.now().strftime("%Y-%m-%d")}',
+            'summary': {
+                'total_logins': total,
+                'successful_logins': success,
+                'failed_logins': failed,
+                'success_rate': f'{((success / total * 100) if total > 0 else 0):.2f}%',
+                'total_alerts': sum(severity_breakdown.values()),
+                'blocked_ips': blocked_ips_count,
+                'locked_accounts': locked_accounts_count
+            },
+            'severity_breakdown': severity_breakdown,
             'top_attacked_users': [{'username': r['username'], 'count': r['count']} for r in top_attacked],
-            'severity_breakdown': {r['severity']: r['c'] for r in severity_breakdown},
+            'alert_type_distribution': [{'type': r['alert_type'], 'count': r['count']} for r in alert_types],
+            'top_attacking_ips': [{'ip': r['ip_address'], 'count': r['count']} for r in top_ips],
+            'hourly_distribution': [{'hour': r['hour'], 'count': r['count']} for r in hourly_dist],
+            'generated_at': datetime.now().isoformat(),
+            'generated_by': 'IDS System'
+        }
+    
+    @staticmethod
+    def threat_intelligence_report() -> Dict:
+        """Generate threat intelligence report"""
+        week_ago = (datetime.now() - timedelta(days=7)).isoformat()
+        
+        # Most common attack patterns
+        attack_patterns = db.query('''
+            SELECT alert_type, COUNT(*) as count, 
+                   AVG(CASE WHEN severity='critical' THEN 4 
+                            WHEN severity='high' THEN 3 
+                            WHEN severity='medium' THEN 2 
+                            ELSE 1 END) as avg_severity
+            FROM alerts 
+            WHERE timestamp > ?
+            GROUP BY alert_type
+            ORDER BY count DESC
+        ''', (week_ago,))
+        
+        # Attack timing patterns
+        time_patterns = db.query('''
+            SELECT strftime('%H', timestamp) as hour, 
+                   COUNT(*) as attack_count
+            FROM alerts
+            WHERE timestamp > ?
+            GROUP BY hour
+            ORDER BY attack_count DESC
+            LIMIT 5
+        ''', (week_ago,))
+        
+        # Geographic patterns (based on IP)
+        ip_patterns = db.query('''
+            SELECT ip_address, COUNT(*) as count,
+                   COUNT(DISTINCT username) as unique_targets
+            FROM alerts
+            WHERE timestamp > ?
+            GROUP BY ip_address
+            HAVING count > 5
+            ORDER BY count DESC
+            LIMIT 10
+        ''', (week_ago,))
+        
+        return {
+            'report_type': 'threat_intelligence',
+            'period': f'Last 7 days',
+            'attack_patterns': [
+                {'type': r['alert_type'], 'count': r['count'], 'avg_severity': round(r['avg_severity'], 2)} 
+                for r in attack_patterns
+            ],
+            'peak_attack_hours': [
+                {'hour': f"{r['hour']}:00", 'attack_count': r['attack_count']} 
+                for r in time_patterns
+            ],
+            'persistent_attackers': [
+                {'ip': r['ip_address'], 'attacks': r['count'], 'unique_targets': r['unique_targets']} 
+                for r in ip_patterns
+            ],
+            'generated_at': datetime.now().isoformat()
+        }
+    
+    @staticmethod
+    def incident_response_report() -> Dict:
+        """Generate incident response report for escalated incidents"""
+        # Get all escalated/resolved incidents from detection_patterns
+        escalated = db.query('''
+            SELECT * FROM detection_patterns 
+            WHERE analyst_review IN ('escalated', 'archived')
+            ORDER BY timestamp DESC
+        ''')
+        
+        # Group by status
+        by_status = {}
+        by_severity = {}
+        
+        for inc in escalated:
+            status = inc['analyst_review']
+            severity = inc['severity']
+            by_status[status] = by_status.get(status, 0) + 1
+            by_severity[severity] = by_severity.get(severity, 0) + 1
+        
+        # Get response times (resolved incidents only)
+        response_times = []
+        for inc in escalated:
+            if inc['reviewed_at']:
+                created = datetime.fromisoformat(inc['timestamp'])
+                reviewed = datetime.fromisoformat(inc['reviewed_at'])
+                response_time = (reviewed - created).total_seconds() / 60  # minutes
+                response_times.append(response_time)
+        
+        avg_response_time = sum(response_times) / len(response_times) if response_times else 0
+        
+        return {
+            'report_type': 'incident_response',
+            'total_incidents': len(escalated),
+            'by_status': by_status,
+            'by_severity': by_severity,
+            'average_response_time_minutes': round(avg_response_time, 2),
+            'incidents': [
+                {
+                    'id': inc['id'],
+                    'type': inc['pattern_type'],
+                    'username': inc['username'],
+                    'ip': inc['ip_address'],
+                    'severity': inc['severity'],
+                    'status': inc['analyst_review'],
+                    'timestamp': inc['timestamp'],
+                    'reviewed_by': inc['reviewed_by'],
+                    'reviewed_at': inc['reviewed_at'],
+                    'notes': inc['analyst_notes']
+                }
+                for inc in escalated[:20]  # Top 20 recent
+            ],
             'generated_at': datetime.now().isoformat()
         }
     
     @staticmethod
     def export_csv(data_type: str) -> str:
+        """Export data as CSV"""
         output = StringIO()
         writer = csv.writer(output)
+        
         if data_type == 'login_events':
             rows = db.query('SELECT * FROM login_events ORDER BY timestamp DESC LIMIT 1000')
-            writer.writerow(['username', 'ip_address', 'timestamp', 'status', 'location'])
+            writer.writerow(['id', 'username', 'ip_address', 'timestamp', 'status', 'location'])
             for r in rows:
-                writer.writerow([r['username'], r['ip_address'], r['timestamp'], r['status'], r['location']])
+                writer.writerow([r['id'], r['username'], r['ip_address'], r['timestamp'], r['status'], r['location']])
+        
         elif data_type == 'alerts':
             rows = db.query('SELECT * FROM alerts ORDER BY timestamp DESC LIMIT 1000')
-            writer.writerow(['id', 'alert_type', 'username', 'ip_address', 'timestamp', 'severity', 'resolved'])
+            writer.writerow(['id', 'alert_type', 'username', 'ip_address', 'timestamp', 'severity', 'resolved', 'resolved_by', 'resolved_at'])
             for r in rows:
-                writer.writerow([r['id'], r['alert_type'], r['username'], r['ip_address'], r['timestamp'], r['severity'], r['resolved']])
+                writer.writerow([r['id'], r['alert_type'], r['username'], r['ip_address'], r['timestamp'], 
+                               r['severity'], r['resolved'], r['resolved_by'], r['resolved_at']])
+        
         elif data_type == 'forensic_logs':
             rows = db.query('SELECT * FROM forensic_logs ORDER BY timestamp DESC LIMIT 1000')
-            writer.writerow(['event_type', 'user', 'ip_address', 'action', 'timestamp', 'details'])
+            writer.writerow(['id', 'event_type', 'user', 'ip_address', 'action', 'timestamp', 'details'])
             for r in rows:
-                writer.writerow([r['event_type'], r['user'], r['ip_address'], r['action'], r['timestamp'], r['details']])
+                writer.writerow([r['id'], r['event_type'], r['user'], r['ip_address'], r['action'], r['timestamp'], r['details']])
+        
         return output.getvalue()
 
 # ============================================================================
@@ -994,6 +1193,14 @@ class APIController:
         self.app.add_url_rule('/api/analyst/tag-incident', 'tag', 
                               AuthDecorators.require_analyst(self.tag_incident), methods=['POST'])
     
+        # Analyst report endpoints
+        self.app.add_url_rule('/api/analyst/reports/threat', 'threat_report',
+                            AuthDecorators.require_analyst(self.threat_report), methods=['GET'])
+        self.app.add_url_rule('/api/analyst/reports/incident', 'incident_report',
+                            AuthDecorators.require_analyst(self.incident_report), methods=['GET'])
+        self.app.add_url_rule('/api/analyst/reports/monthly', 'monthly_report',
+                            AuthDecorators.require_analyst(self.monthly_report_endpoint), methods=['GET'])
+
     # ---------- Public Endpoints ----------
     def health_check(self):
         """Health check endpoint for monitoring"""
@@ -1386,6 +1593,39 @@ class APIController:
             logger.error(f"Tag error: {type(e).__name__}")
             return ResponseHelper.error('Server error', 500)
 
+    def monthly_report_endpoint(self):
+        """Monthly report endpoint for analysts"""
+        try:
+            report = ReportGenerator.monthly_report()
+            ForensicLogModel.create('REPORT_GENERATED', g.current_user['username'], 
+                                request.remote_addr, 'REPORT', 'Monthly report')
+            return jsonify(report)
+        except Exception as e:
+            logger.error(f"Monthly report error: {type(e).__name__}")
+            return ResponseHelper.error('Server error', 500)
+
+    def threat_report(self):
+        """Threat intelligence report endpoint"""
+        try:
+            report = ReportGenerator.threat_intelligence_report()
+            ForensicLogModel.create('REPORT_GENERATED', g.current_user['username'], 
+                                request.remote_addr, 'REPORT', 'Threat intelligence')
+            return jsonify(report)
+        except Exception as e:
+            logger.error(f"Threat report error: {type(e).__name__}")
+            return ResponseHelper.error('Server error', 500)
+
+    def incident_report(self):
+        """Incident response report endpoint"""
+        try:
+            report = ReportGenerator.incident_response_report()
+            ForensicLogModel.create('REPORT_GENERATED', g.current_user['username'], 
+                                request.remote_addr, 'REPORT', 'Incident response')
+            return jsonify(report)
+        except Exception as e:
+            logger.error(f"Incident report error: {type(e).__name__}")
+            return ResponseHelper.error('Server error', 500)
+
 # ============================================================================
 # IDS APPLICATION - MAIN CLASS
 # ============================================================================
@@ -1551,7 +1791,7 @@ class IDSApplication:
 
     def _create_default_config(self):
         defaults = {
-            'max_failed_attempts': 3, 
+            'max_failed_attempts': 10, 
             'detection_window': 120, 
             'lockout_duration': 900,
             'distributed_threshold': 5, 

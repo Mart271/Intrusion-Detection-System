@@ -160,9 +160,12 @@ function shakeForm() {
 function showRateLimitCountdown(btn, seconds) {
     btn.disabled = true;
     btn.style.opacity = '0.5';
+    const errorMessage = document.getElementById('errorMessage');
     
     const countdown = setInterval(() => {
         btn.textContent = `Wait ${seconds}s`;
+        // UPDATE ERROR MESSAGE IN REAL-TIME
+        errorMessage.innerHTML = `<strong>Too Many Attempts!</strong><br>Please wait ${seconds} seconds before trying again.`;
         seconds--;
         
         if (seconds < 0) {
@@ -170,7 +173,7 @@ function showRateLimitCountdown(btn, seconds) {
             btn.disabled = false;
             btn.textContent = 'Sign In';
             btn.style.opacity = '1';
-            document.getElementById('errorMessage').style.display = 'none';
+            errorMessage.style.display = 'none';
         }
     }, 1000);
 }

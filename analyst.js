@@ -119,9 +119,14 @@ function setupEventListeners() {
 
 async function loadIncidents() {
     try {
-        const alertsData = await APIClient.get('/dashboard/alerts?limit=100');
+        // Load from both alerts AND detection_patterns for comprehensive view
+        const [alertsData, detectionsData] = await Promise.all([
+            APIClient.get('/dashboard/alerts?limit=200'),
+            APIClient.get('/analyst/detections?limit=200').catch(() => ({ detections: [] }))
+        ]);
         
-        allIncidents = (alertsData.alerts || []).map(alert => ({
+        // Combine alerts and detection patterns
+        const alertIncidents = (alertsData.alerts || []).map(alert => ({
             id: alert.id,
             alert_type: alert.alert_type,
             username: alert.username,
@@ -129,29 +134,43 @@ async function loadIncidents() {
             severity: alert.severity,
             timestamp: alert.timestamp,
             resolved: alert.resolved,
-            // Determine status based on resolved flag and local storage for escalated/tagged
-            status: getIncidentStatus(alert),
-            tags: getIncidentTags(alert.id)
+            status: alert.resolved ? 'archived' : 'unreviewed',
+            tags: getIncidentTags(`alert_${alert.id}`),
+            source: 'alert'
         }));
+        
+        const detectionIncidents = (detectionsData.detections || []).map(detection => ({
+            id: `det_${detection.id}`,
+            alert_type: detection.pattern_type,
+            username: detection.username,
+            ip_address: detection.ip_address,
+            severity: detection.severity,
+            timestamp: detection.timestamp,
+            resolved: detection.analyst_review !== 'pending',
+            status: detection.analyst_review,
+            tags: getIncidentTags(`det_${detection.id}`),
+            source: 'detection',
+            original_id: detection.id
+        }));
+        
+        // Combine and sort by timestamp
+        allIncidents = [...alertIncidents, ...detectionIncidents]
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        console.log(`Loaded ${allIncidents.length} total incidents (${alertIncidents.length} alerts + ${detectionIncidents.length} detections)`);
         
         updateStats();
         renderIncidents();
     } catch (error) {
         console.error('Error loading incidents:', error);
+        const tbody = document.getElementById('incidentsTable');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Error loading incidents</td></tr>';
+        }
     }
 }
 
-// Store escalated and tagged incidents locally since backend doesn't track this separately
-function getIncidentStatus(alert) {
-    const localStatus = localStorage.getItem(`incident_status_${alert.id}`);
-    if (localStatus) return localStatus;
-    return alert.resolved ? 'archived' : 'unreviewed';
-}
-
-function setIncidentStatus(id, status) {
-    localStorage.setItem(`incident_status_${id}`, status);
-}
-
+// Store tags locally
 function getIncidentTags(id) {
     const tags = localStorage.getItem(`incident_tags_${id}`);
     return tags ? JSON.parse(tags) : [];
@@ -167,14 +186,24 @@ function updateStats() {
     const escalated = allIncidents.filter(i => i.status === 'escalated').length;
     const archived = allIncidents.filter(i => i.status === 'archived').length;
     
-    document.getElementById('criticalUnreviewed').textContent = criticalUnreviewed;
-    document.getElementById('pendingReview').textContent = pendingReview;
-    document.getElementById('escalated').textContent = escalated;
-    document.getElementById('archived').textContent = archived;
+    const setStatIfExists = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    };
+    
+    setStatIfExists('criticalUnreviewed', criticalUnreviewed);
+    setStatIfExists('pendingReview', pendingReview);
+    setStatIfExists('escalated', escalated);
+    setStatIfExists('archived', archived);
 }
 
 function renderIncidents() {
     const tbody = document.getElementById('incidentsTable');
+    
+    if (!tbody) {
+        console.error('Incidents table not found');
+        return;
+    }
     
     const filtered = allIncidents.filter(inc => {
         const matchesText = filterText === '' || 
@@ -188,7 +217,8 @@ function renderIncidents() {
     
     if (filtered.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No incidents found</td></tr>';
-        document.getElementById('incidentCount').textContent = `Showing 0 of ${allIncidents.length} incidents`;
+        const countEl = document.getElementById('incidentCount');
+        if (countEl) countEl.textContent = `Showing 0 of ${allIncidents.length} incidents`;
         return;
     }
     
@@ -210,7 +240,8 @@ function renderIncidents() {
             </tr>`;
     }).join('');
     
-    document.getElementById('incidentCount').textContent = `Showing ${filtered.length} of ${allIncidents.length} incidents`;
+    const countEl = document.getElementById('incidentCount');
+    if (countEl) countEl.textContent = `Showing ${filtered.length} of ${allIncidents.length} incidents`;
 }
 
 function getSeverityClass(severity) {
@@ -258,9 +289,14 @@ function selectAll() {
 
 function updateBulkActionButtons() {
     const count = selectedIncidents.length;
-    document.getElementById('escalateBtn').textContent = `🚩 Escalate (${count})`;
-    document.getElementById('archiveBtn').textContent = `📦 Archive (${count})`;
-    document.getElementById('tagBtn').textContent = `🏷️ Tag (${count})`;
+    const setTextIfExists = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+    };
+    
+    setTextIfExists('escalateBtn', `🚩 Escalate (${count})`);
+    setTextIfExists('archiveBtn', `📦 Archive (${count})`);
+    setTextIfExists('tagBtn', `🏷️ Tag (${count})`);
 }
 
 async function bulkEscalate() {
@@ -270,34 +306,54 @@ async function bulkEscalate() {
     }
     if (!confirm(`Escalate ${selectedIncidents.length} incident(s) to Administrator?`)) return;
     
+    NotificationService.show(`Escalating ${selectedIncidents.length} incident(s)...`, 'info');
+    
     try {
         let successCount = 0;
-        for (const id of selectedIncidents) {
+        let failCount = 0;
+        
+        for (let i = 0; i < selectedIncidents.length; i++) {
+            const id = selectedIncidents[i];
+            const incident = allIncidents.find(inc => inc.id === id);
+            
             try {
+                // Use appropriate ID based on source
+                const incidentId = incident.source === 'detection' ? incident.original_id : id;
+                
                 const res = await APIClient.post('/analyst/escalate-incident', { 
-                    incident_id: id, 
+                    incident_id: incidentId,
                     analyst: SessionManager.getUsername() 
                 });
                 if (res.success) {
                     successCount++;
-                    setIncidentStatus(id, 'escalated');
+                    if (incident) {
+                        incident.status = 'escalated';
+                    }
+                } else {
+                    failCount++;
                 }
             } catch (e) { 
-                console.error(`Failed to escalate ${id}:`, e); 
+                console.error(`Failed to escalate ${id}:`, e);
+                failCount++;
+            }
+            
+            if (i < selectedIncidents.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 300));
             }
         }
         
         if (successCount > 0) {
             NotificationService.show(`Successfully escalated ${successCount} incident(s)`, 'success');
-            // Update local state
-            allIncidents = allIncidents.map(inc => 
-                selectedIncidents.includes(inc.id) ? {...inc, status: 'escalated'} : inc
-            );
             selectedIncidents = [];
-            document.getElementById('selectAll').checked = false;
+            const selectAllCheckbox = document.getElementById('selectAll');
+            if (selectAllCheckbox) selectAllCheckbox.checked = false;
             renderIncidents();
             updateStats();
             updateBulkActionButtons();
+        }
+        
+        if (failCount > 0) {
+            NotificationService.show(`Failed to escalate ${failCount} incident(s)`, 'error');
         }
     } catch (error) {
         console.error('Bulk escalate error:', error);
@@ -312,33 +368,55 @@ async function bulkArchive() {
     }
     if (!confirm(`Archive ${selectedIncidents.length} incident(s)?`)) return;
     
+    NotificationService.show(`Archiving ${selectedIncidents.length} incident(s)...`, 'info');
+    
     try {
         let successCount = 0;
-        for (const id of selectedIncidents) {
+        let failCount = 0;
+        
+        for (let i = 0; i < selectedIncidents.length; i++) {
+            const id = selectedIncidents[i];
+            const incident = allIncidents.find(inc => inc.id === id);
+            
             try {
+                // Use appropriate ID based on source
+                const incidentId = incident.source === 'detection' ? incident.original_id : id;
+                
                 const res = await APIClient.post('/analyst/archive-incident', { 
-                    incident_id: id, 
+                    incident_id: incidentId,
                     analyst: SessionManager.getUsername() 
                 });
                 if (res.success) {
                     successCount++;
-                    setIncidentStatus(id, 'archived');
+                    if (incident) {
+                        incident.status = 'archived';
+                        incident.resolved = 1;
+                    }
+                } else {
+                    failCount++;
                 }
             } catch (e) {
                 console.error(`Failed to archive ${id}:`, e);
+                failCount++;
+            }
+            
+            if (i < selectedIncidents.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 300));
             }
         }
         
         if (successCount > 0) {
             NotificationService.show(`Successfully archived ${successCount} incident(s)`, 'success');
-            allIncidents = allIncidents.map(inc => 
-                selectedIncidents.includes(inc.id) ? {...inc, status: 'archived'} : inc
-            );
             selectedIncidents = [];
-            document.getElementById('selectAll').checked = false;
+            const selectAllCheckbox = document.getElementById('selectAll');
+            if (selectAllCheckbox) selectAllCheckbox.checked = false;
             renderIncidents();
             updateStats();
             updateBulkActionButtons();
+        }
+        
+        if (failCount > 0) {
+            NotificationService.show(`Failed to archive ${failCount} incident(s)`, 'error');
         }
     } catch (error) {
         console.error('Bulk archive error:', error);
@@ -357,9 +435,15 @@ async function bulkTag() {
     
     const cleanTag = tag.trim();
     
+    NotificationService.show(`Tagging ${selectedIncidents.length} incident(s)...`, 'info');
+    
     try {
         let successCount = 0;
-        for (const id of selectedIncidents) {
+        let failCount = 0;
+        
+        for (let i = 0; i < selectedIncidents.length; i++) {
+            const id = selectedIncidents[i];
+            
             try {
                 const res = await APIClient.post('/analyst/tag-incident', { 
                     incident_id: id, 
@@ -368,30 +452,40 @@ async function bulkTag() {
                 });
                 if (res.success) {
                     successCount++;
-                    // Update local tags
                     const existingTags = getIncidentTags(id);
                     if (!existingTags.includes(cleanTag)) {
-                        setIncidentTags(id, [...existingTags, cleanTag]);
+                        const newTags = [...existingTags, cleanTag];
+                        setIncidentTags(id, newTags);
+                        
+                        const incident = allIncidents.find(inc => inc.id === id);
+                        if (incident) {
+                            incident.tags = newTags;
+                        }
                     }
+                } else {
+                    failCount++;
                 }
             } catch (e) {
                 console.error(`Failed to tag ${id}:`, e);
+                failCount++;
+            }
+            
+            if (i < selectedIncidents.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 300));
             }
         }
         
         if (successCount > 0) {
             NotificationService.show(`Successfully tagged ${successCount} incident(s) with "${cleanTag}"`, 'success');
-            allIncidents = allIncidents.map(inc => {
-                if (selectedIncidents.includes(inc.id)) {
-                    const newTags = [...new Set([...inc.tags, cleanTag])];
-                    return {...inc, tags: newTags};
-                }
-                return inc;
-            });
             selectedIncidents = [];
-            document.getElementById('selectAll').checked = false;
+            const selectAllCheckbox = document.getElementById('selectAll');
+            if (selectAllCheckbox) selectAllCheckbox.checked = false;
             renderIncidents();
             updateBulkActionButtons();
+        }
+        
+        if (failCount > 0) {
+            NotificationService.show(`Failed to tag ${failCount} incident(s)`, 'error');
         }
     } catch (error) {
         console.error('Bulk tag error:', error);
@@ -399,7 +493,7 @@ async function bulkTag() {
     }
 }
 
-// Export functions - Generate CSV locally from current data
+// Export functions
 function exportCSV() { 
     const csvContent = generateCSV(allIncidents, ['id', 'alert_type', 'username', 'ip_address', 'timestamp', 'severity', 'status']);
     downloadCSV(csvContent, 'ids_incidents.csv');
@@ -407,7 +501,6 @@ function exportCSV() {
 }
 
 function exportLoginHistory() { 
-    // Try to fetch login history, fallback to local generation
     APIClient.get('/dashboard/login-history?limit=1000')
         .then(data => {
             const csvContent = generateCSV(data.history || [], ['username', 'ip_address', 'timestamp', 'status', 'location']);
@@ -420,7 +513,6 @@ function exportLoginHistory() {
 }
 
 function exportForensicPackage() { 
-    // Export all available data
     const csvContent = generateCSV(allIncidents, ['id', 'alert_type', 'username', 'ip_address', 'timestamp', 'severity', 'status', 'tags']);
     downloadCSV(csvContent, 'forensic_package.csv');
     NotificationService.show('Forensic package exported', 'success');
@@ -446,7 +538,6 @@ function generateCSV(data, columns) {
             let val = row[col];
             if (Array.isArray(val)) val = val.join(';');
             if (val === null || val === undefined) val = '';
-            // Escape quotes and wrap in quotes if contains comma
             val = String(val).replace(/"/g, '""');
             if (val.includes(',') || val.includes('"') || val.includes('\n')) {
                 val = `"${val}"`;
@@ -469,42 +560,14 @@ function downloadCSV(content, filename) {
     URL.revokeObjectURL(link.href);
 }
 
-// Alternative: Try server export first, fallback to local
-async function tryServerExport(endpoint, fallbackFn, filename) {
-    try {
-        const res = await fetch(`${API_BASE}${endpoint}`, { 
-            headers: APIClient.getHeaders() 
-        });
-        if (res.ok) {
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            return true;
-        }
-    } catch (e) {
-        console.log('Server export failed, using fallback');
-    }
-    // Use fallback
-    fallbackFn();
-    return false;
-}
-
-// Reports - Generate locally from available data
+// Reports
 async function generateWeeklyReport() { 
     NotificationService.show('Generating weekly report...', 'info');
     
     try {
-        // Try to get from admin endpoint first (if user has admin role)
         const report = await APIClient.get('/admin/reports/weekly');
         displayReport(report);
     } catch (e) {
-        // Generate locally if admin endpoint fails
         const report = generateLocalReport('weekly', 7);
         displayReport(report);
     }
@@ -514,7 +577,8 @@ async function generateMonthlyReport() {
     NotificationService.show('Generating monthly report...', 'info');
     
     try {
-        const report = await APIClient.get('/admin/reports/monthly');
+        const report = await APIClient.get('/admin/reports/weekly');
+        report.report_type = 'monthly';
         displayReport(report);
     } catch (e) {
         const report = generateLocalReport('monthly', 30);
@@ -588,7 +652,10 @@ function getTopAttackedUsers(incidents) {
 }
 
 function displayReport(report) {
-    document.getElementById('reportDisplay').style.display = 'block';
+    const reportDisplay = document.getElementById('reportDisplay');
+    if (!reportDisplay) return;
+    
+    reportDisplay.style.display = 'block';
     
     let html = `
         <div style="color: #e2e8f0; line-height: 1.8;">
@@ -640,11 +707,11 @@ function displayReport(report) {
         </div>
     `;
     
-    document.getElementById('reportContent').innerHTML = html;
+    const reportContent = document.getElementById('reportContent');
+    if (reportContent) reportContent.innerHTML = html;
     NotificationService.show('Report generated successfully', 'success');
     
-    // Scroll to report
-    document.getElementById('reportDisplay').scrollIntoView({ behavior: 'smooth' });
+    reportDisplay.scrollIntoView({ behavior: 'smooth' });
 }
 
 // Tab switching
@@ -661,7 +728,6 @@ function showTab(tabName) {
         targetTab.style.display = 'block';
     }
     
-    // Find and activate the clicked button
     const buttons = document.querySelectorAll('.tab-btn');
     buttons.forEach(btn => {
         if (btn.textContent.toLowerCase().includes(tabName.substring(0, 4))) {
@@ -673,9 +739,8 @@ function showTab(tabName) {
 function logout() {
     APIClient.post('/logout', {}).catch(() => {});
     SessionManager.clearSession();
-    // Clear local incident status/tags on logout
     Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('incident_')) {
+        if (key.startsWith('incident_tags_')) {
             localStorage.removeItem(key);
         }
     });

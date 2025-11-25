@@ -155,7 +155,6 @@ async function loadAdminData() {
         document.getElementById('totalLogins').textContent = stats.total_logins || 0;
         document.getElementById('failedAttempts').textContent = stats.failed_attempts || 0;
         document.getElementById('activeAlerts').textContent = stats.active_alerts || 0;
-        document.getElementById('unreviewedDetections').textContent = stats.unreviewed_detections || 0;
         document.getElementById('blockedIPs').textContent = stats.blocked_ips || 0;
         document.getElementById('lockedUsers').textContent = stats.locked_accounts || 0;
         document.getElementById('rateLimitedIPs').textContent = stats.rate_limited_ips || 0;
@@ -268,7 +267,7 @@ async function loadLockedAccountsTable() {
 async function loadConfig() {
     try {
         const config = await APIClient.get('/admin/config');
-        document.getElementById('maxFailedAttempts').value = config.max_failed_attempts || 3;
+        document.getElementById('maxFailedAttempts').value = config.max_failed_attempts || 10;
         document.getElementById('failedAttemptsWindow').value = config.failed_attempts_window || config.detection_window || 120;
         document.getElementById('lockoutDuration').value = config.lockout_duration || 900;
         document.getElementById('distributedThreshold').value = config.distributed_threshold || 5;
