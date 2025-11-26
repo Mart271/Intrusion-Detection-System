@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, g, Response
+from flask import Flask, request, jsonify, g, Response, send_from_directory, redirect
 from flask_cors import CORS
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
@@ -1702,6 +1702,7 @@ class IDSApplication:
         self.app.secret_key = config.SECRET_KEY
         self._setup_cors()
         self._setup_security_headers()
+        self._setup_static_routes()  # Add static file serving routes
         self.session_mgr = SessionManager(config.SESSION_TIMEOUT)
         self.rate_limiter = RateLimiter(config.RATE_LIMIT_MAX, config.RATE_LIMIT_WINDOW, config.RATE_LIMIT_BLOCK)
         self.detector = IDSDetector()
@@ -1711,16 +1712,17 @@ class IDSApplication:
     def _setup_cors(self):
         """Configure CORS with restricted origins"""
         # In development, allow all origins for easier testing
-        # In production, use CORS_ORIGINS environment variable
+        # In production, allow all origins or use CORS_ORIGINS environment variable
         if config.ENV == 'development':
-            CORS(self.app, origins='*')
+            CORS(self.app, origins='*', supports_credentials=True)
         else:
-            # Production: use configured origins or default to localhost
-            origins = config.CORS_ORIGINS.split(',') if config.CORS_ORIGINS else [
-                'http://localhost:5000', 'http://127.0.0.1:5000',
-                'http://localhost:5001', 'http://127.0.0.1:5001'
-            ]
-            CORS(self.app, origins=origins)
+            # Production: If CORS_ORIGINS is set, use it; otherwise allow all
+            if config.CORS_ORIGINS and config.CORS_ORIGINS != 'http://localhost:5000':
+                origins = config.CORS_ORIGINS.split(',')
+                CORS(self.app, origins=origins, supports_credentials=True)
+            else:
+                # Allow all origins for easier production deployment
+                CORS(self.app, origins='*', supports_credentials=True)
     
     def _setup_security_headers(self):
         """Add security headers to all responses"""
@@ -1733,6 +1735,23 @@ class IDSApplication:
             if config.ENV != 'development':
                 response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
             return response
+    
+    def _setup_static_routes(self):
+        """Setup routes to serve static HTML, CSS, and JS files"""
+        
+        @self.app.route('/')
+        def index():
+            """Redirect root to login page"""
+            return redirect('/login.html')
+        
+        @self.app.route('/<path:filename>')
+        def serve_static(filename):
+            """Serve static files (HTML, CSS, JS)"""
+            # Security: Only serve specific file types
+            allowed_extensions = {'.html', '.css', '.js', '.ico', '.png', '.jpg', '.svg'}
+            if any(filename.endswith(ext) for ext in allowed_extensions):
+                return send_from_directory('.', filename)
+            return "File not found", 404
     
     def _init_database(self):
         try:
@@ -1907,4 +1926,4 @@ if __name__ == '__main__':
     
     ids.run()
 
-app = IDSApplication().app    
+app = IDSApplication().app
