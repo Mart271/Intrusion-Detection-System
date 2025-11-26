@@ -349,7 +349,7 @@ class UserModel(BaseModel):
             db.execute('''
                 INSERT INTO users (username, password_hash, role, created_at, is_active, must_change_password)
                 VALUES (?, ?, ?, ?, 1, ?)
-            ''', (username, hashed, role, datetime.now().isoformat(), 1 if must_change_password else 0))
+            ''', (username, hashed, role, datetime.now().isoformat() + 'Z', 1 if must_change_password else 0))
             # SECURITY FIX: Don't log password or username details
             logger.info(f"New user account created with role '{role}'")
             return True
@@ -402,7 +402,7 @@ class AlertModel(BaseModel):
         return db.execute('''
             INSERT INTO alerts (alert_type, username, ip_address, timestamp, severity)
             VALUES (?, ?, ?, ?, ?)
-        ''', (alert_type, username, ip, datetime.now().isoformat(), severity))
+        ''', (alert_type, username, ip, datetime.now().isoformat() + 'Z', severity))
     
     @classmethod
     def find_unresolved(cls, limit: int = 100) -> List[Dict]:
@@ -412,7 +412,7 @@ class AlertModel(BaseModel):
     @classmethod
     def resolve(cls, alert_id: int, resolved_by: str) -> bool:
         db.execute('UPDATE alerts SET resolved=1, resolved_at=?, resolved_by=? WHERE id=?',
-                   (datetime.now().isoformat(), resolved_by, alert_id))
+                   (datetime.now().isoformat() + 'Z', resolved_by, alert_id))
         return True
 
 # ============================================================================
@@ -429,7 +429,7 @@ class LoginEventModel(BaseModel):
         return db.execute('''
             INSERT INTO login_events (username, ip_address, timestamp, status, location)
             VALUES (?, ?, ?, ?, ?)
-        ''', (username, ip, datetime.now().isoformat(), status, location))
+        ''', (username, ip, datetime.now().isoformat() + 'Z', status, location))
 
 class ForensicLogModel(BaseModel):
     @classmethod
@@ -441,7 +441,7 @@ class ForensicLogModel(BaseModel):
         return db.execute('''
             INSERT INTO forensic_logs (event_type, user, ip_address, action, timestamp, details)
             VALUES (?, ?, ?, ?, ?, ?)
-        ''', (event_type, user, ip or 'N/A', action, datetime.now().isoformat(), details))
+        ''', (event_type, user, ip or 'N/A', action, datetime.now().isoformat() + 'Z', details))
 
 class BlockedIPModel(BaseModel):
     @classmethod
@@ -458,7 +458,7 @@ class BlockedIPModel(BaseModel):
         return db.execute('''
             INSERT INTO blocked_ips_log (ip_address, reason, blocked_at, blocked_by, is_active)
             VALUES (?, ?, ?, ?, 1)
-        ''', (ip, reason, datetime.now().isoformat(), blocked_by))
+        ''', (ip, reason, datetime.now().isoformat() + 'Z', blocked_by))
     
     @classmethod
     def unblock(cls, ip: str) -> bool:
@@ -490,7 +490,7 @@ class LockedAccountModel(BaseModel):
         return db.execute('''
             INSERT INTO locked_accounts_log (username, reason, locked_at, locked_by, unlock_time, is_active)
             VALUES (?, ?, ?, ?, ?, 1)
-        ''', (username, reason, datetime.now().isoformat(), locked_by, unlock_time))
+        ''', (username, reason, datetime.now().isoformat() + 'Z', locked_by, unlock_time))
     
     @classmethod
     def unlock(cls, username: str) -> bool:
@@ -507,14 +507,14 @@ class DetectionPatternModel(BaseModel):
         return db.execute('''
             INSERT INTO detection_patterns (pattern_type, username, ip_address, timestamp, severity, details, analyst_review)
             VALUES (?, ?, ?, ?, ?, ?, 'pending')
-        ''', (pattern_type, username, ip, datetime.now().isoformat(), severity, details))
+        ''', (pattern_type, username, ip, datetime.now().isoformat() + 'Z', severity, details))
     
     @classmethod
     def update_review(cls, id: int, status: str, analyst: str, notes: str = "") -> bool:
         db.execute('''
             UPDATE detection_patterns SET analyst_review=?, reviewed_by=?, reviewed_at=?, analyst_notes=?
             WHERE id=?
-        ''', (status, analyst, datetime.now().isoformat(), notes, id))
+        ''', (status, analyst, datetime.now().isoformat() + 'Z', notes, id))
         return True
 
 class DetectionRuleModel(BaseModel):
@@ -527,7 +527,7 @@ class DetectionRuleModel(BaseModel):
         return db.execute('''
             INSERT INTO detection_rules (rule_name, rule_condition, severity, action, created_at, is_active)
             VALUES (?, ?, ?, ?, ?, 1)
-        ''', (name, condition, severity, action, datetime.now().isoformat()))
+        ''', (name, condition, severity, action, datetime.now().isoformat() + 'Z'))
     
     @classmethod
     def toggle(cls, rule_id: int, active: bool) -> bool:
@@ -547,7 +547,7 @@ class ConfigModel(BaseModel):
     @classmethod
     def set(cls, key: str, value: int) -> bool:
         db.execute('INSERT OR REPLACE INTO config (key, value, updated_at) VALUES (?, ?, ?)',
-                   (key, str(value), datetime.now().isoformat()))
+                   (key, str(value), datetime.now().isoformat() + 'Z'))
         return True
 
 # ============================================================================
@@ -793,7 +793,7 @@ class IDSDetector:
             'username': user,
             'ip': ip,
             'details': details,
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat() + 'Z'
         }
     
     def _cleanup(self):
@@ -937,7 +937,7 @@ class ReportGenerator:
             'alert_type_distribution': [{'type': r['alert_type'], 'count': r['count']} for r in alert_types],
             'top_attacking_ips': [{'ip': r['ip_address'], 'count': r['count']} for r in top_ips],
             'hourly_distribution': [{'hour': r['hour'], 'count': r['count']} for r in hourly_dist],
-            'generated_at': datetime.now().isoformat(),
+            'generated_at': datetime.now().isoformat() + 'Z',
             'generated_by': 'IDS System'
         }
     
@@ -997,7 +997,7 @@ class ReportGenerator:
                 {'ip': r['ip_address'], 'attacks': r['count'], 'unique_targets': r['unique_targets']} 
                 for r in ip_patterns
             ],
-            'generated_at': datetime.now().isoformat()
+            'generated_at': datetime.now().isoformat() + 'Z'
         }
     
     @staticmethod
@@ -1052,7 +1052,7 @@ class ReportGenerator:
                 }
                 for inc in escalated[:20]  # Top 20 recent
             ],
-            'generated_at': datetime.now().isoformat()
+            'generated_at': datetime.now().isoformat() + 'Z'
         }
     
     @staticmethod
@@ -1302,7 +1302,7 @@ class APIController:
         """Health check endpoint for monitoring"""
         return jsonify({
             'status': 'healthy',
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': datetime.now().isoformat() + 'Z',
             'version': '4.0',
             'environment': config.ENV
         })
