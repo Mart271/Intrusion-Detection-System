@@ -326,17 +326,31 @@ async function loadBlockedIPsTable() {
 
 async function loadLockedAccountsTable() {
     try {
-        const data = await APIClient.get('/dashboard/alerts?limit=50');
-        const locked = (data.alerts || []).filter(a => a.alert_type.includes('FAILED') || a.alert_type.includes('BRUTE')).slice(0, 10);
+        const data = await APIClient.get('/admin/locked-accounts');
+        const locked = data.locked_accounts || [];
         const tbody = document.getElementById('lockedAccountsTable');
-        if (locked.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No locked accounts</td></tr>'; return; }
+        
+        if (locked.length === 0) { 
+            tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No locked accounts</td></tr>'; 
+            return; 
+        }
         tbody.innerHTML = locked.map(a => {
-            const lockedTime = new Date(a.timestamp), unlockTime = new Date(lockedTime.getTime() + 15 * 60000);
-            return `<tr><td>${InputValidator.sanitize(a.username)}</td><td>${lockedTime.toLocaleString()}</td>
-                <td>${unlockTime.toLocaleString()}</td>
-                <td><button style="padding:0.5rem;font-size:0.75rem;" class="success" onclick="unlockAccountQuick('${a.username}')">Unlock</button></td></tr>`;
+            const lockedTime = new Date(a.locked_at);
+            const unlockTime = new Date(a.unlock_time);
+            const isExpired = new Date() > unlockTime;
+            const rowStyle = a.is_active ? 'background:#7c2d12;' : '';
+            
+            return `<tr style="${rowStyle}">
+                <td>${InputValidator.sanitize(a.username)}</td>
+                <td>${TimezoneUtil.formatToLocal(a.locked_at)}</td>
+                <td>${TimezoneUtil.formatToLocal(a.unlock_time)} ${isExpired ? '(Expired)' : ''}</td>
+                <td><button style="padding:0.5rem;font-size:0.75rem;" class="success" onclick="unlockAccountQuick('${a.username}')">Unlock</button></td>
+            </tr>`;
         }).join('');
-    } catch (e) { document.getElementById('lockedAccountsTable').innerHTML = '<tr><td colspan="4" class="empty-state">Error loading</td></tr>'; }
+    } catch (e) { 
+        console.error('Locked accounts error:', e);
+        document.getElementById('lockedAccountsTable').innerHTML = '<tr><td colspan="4" class="empty-state">Error loading</td></tr>'; 
+    }
 }
 
 // Config Management
