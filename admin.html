@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%27.9em%27 font-size=%2790%27>🔒</text></svg>">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IDS - Admin Dashboard</title>
@@ -50,45 +49,27 @@
                 </div>
             </div>
 
-           <div class="section">
-    <h2>🚨 Suspicious IP Addresses</h2>
-    <p style="color:#94a3b8;margin-bottom:1rem;">Monitor and block suspicious IP addresses. Blocked IPs are highlighted in red.</p>
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>IP Address</th>
-                    <th>Failed Attempts</th>
-                    <th>First Seen</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="blockedIPsTable">
-                <tr><td colspan="4" class="empty-state">Loading...</td></tr>
-            </tbody>
-        </table>
-    </div>
-</div>
+            <div class="section">
+                <h2>🚨 Suspicious IP Addresses</h2>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>IP Address</th><th>Failed Attempts</th><th>First Seen</th><th>Actions</th></tr></thead>
+                        <tbody id="blockedIPsTable"><tr><td colspan="4" class="empty-state">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
 
-<div class="section">
-    <h2>🔒 Locked Accounts</h2>
-    <p style="color:#94a3b8;margin-bottom:1rem;">Manage locked user accounts. Locked accounts are highlighted in red.</p>
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Locked At</th>
-                    <th>Auto Unlock</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="lockedAccountsTable">
-                <tr><td colspan="4" class="empty-state">Loading...</td></tr>
-            </tbody>
-        </table>
-    </div>
-</div>
+            <div class="section">
+                <h2>🔒 Locked Accounts</h2>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Username</th><th>Locked At</th><th>Auto Unlock</th><th>Actions</th></tr></thead>
+                        <tbody id="lockedAccountsTable"><tr><td colspan="4" class="empty-state">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- TAB 2: MITIGATION & RESPONSE -->
         <div id="mitigationTab" class="tab-content">
             <div class="section">
@@ -256,6 +237,6 @@
         </div>
     </div>
 
-    <script src="admin.js?v=20251126"></script>
+    <script src="admin.js"></script>
 </body>
 </html>
