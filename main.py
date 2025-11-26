@@ -1239,7 +1239,10 @@ class APIController:
         # Admin endpoints - require admin role
         self.app.add_url_rule('/api/admin/config', 'config', 
                               AuthDecorators.require_admin(self.admin_config), methods=['GET', 'POST'])
-        self.app.add_url_rule('/api/admin/rules', 'rules', 
+        self.app.add_url_rule('/api/admin/rules', 'rules',)
+        self.app.add_url_rule('/api/admin/locked-accounts', 'locked_accounts_list',
+                              AuthDecorators.require_admin(self.get_locked_accounts), methods=['GET'])
+        self.app.add_url_rule('/api/admin/rules', 'rules',                      
                               AuthDecorators.require_admin(self.admin_rules), methods=['GET', 'POST'])
         self.app.add_url_rule('/api/admin/rules/<int:rule_id>/toggle', 'toggle_rule', 
                               AuthDecorators.require_admin(self.toggle_rule), methods=['POST'])
