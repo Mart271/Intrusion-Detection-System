@@ -1,4 +1,12 @@
-const API_BASE = process.env.API_URL || 'http://127.0.0.1:5000/api';
+// Auto-detect API base URL - works for both localhost and production (Render.com)
+const API_BASE = (() => {
+    // If running on same domain (production), use relative path
+    if (window.location.protocol === 'https:' || window.location.hostname !== 'localhost') {
+        return '/api';
+    }
+    // Local development
+    return 'http://127.0.0.1:5000/api';
+})();
 let refreshInterval = 5000;
 let refreshTimerId = null;
 

@@ -1138,52 +1138,57 @@ class APIController:
         SECURITY FIX: All protected routes now use authentication decorators
         """
         # Serve static HTML files
+        # Get the directory where main.py is located
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        
         @self.app.route('/')
         def index():
-            if os.path.exists('login.html'):
-                with open('login.html', 'r', encoding='utf-8') as f:
+            file_path = os.path.join(base_dir, 'login.html')
+            logger.info(f"Root route accessed. Base dir: {base_dir}, File exists: {os.path.exists(file_path)}")
+            if os.path.exists(file_path):
+                with open(file_path, 'r', encoding='utf-8') as f:
                     return f.read()
-            return 'IDS System API - Use /api/health to check status'
+            # Return a simple HTML response if file not found
+            return f'''<html><body>
+                <h1>IDS System</h1>
+                <p>Base directory: {base_dir}</p>
+                <p>File exists: {os.path.exists(file_path)}</p>
+                <p>API Health: <a href="/api/health">/api/health</a></p>
+            </body></html>'''
         
         @self.app.route('/login.html')
         def login_page():
-            if os.path.exists('login.html'):
-                with open('login.html', 'r', encoding='utf-8') as f:
+            file_path = os.path.join(base_dir, 'login.html')
+            if os.path.exists(file_path):
+                with open(file_path, 'r', encoding='utf-8') as f:
                     return f.read()
             return 'Login page not found', 404
         
         @self.app.route('/admin.html')
         def admin_page():
-            if os.path.exists('admin.html'):
-                with open('admin.html', 'r', encoding='utf-8') as f:
+            file_path = os.path.join(base_dir, 'admin.html')
+            if os.path.exists(file_path):
+                with open(file_path, 'r', encoding='utf-8') as f:
                     return f.read()
             return 'Admin page not found', 404
         
         @self.app.route('/analyst.html')
         def analyst_page():
-            if os.path.exists('analyst.html'):
-                with open('analyst.html', 'r', encoding='utf-8') as f:
+            file_path = os.path.join(base_dir, 'analyst.html')
+            if os.path.exists(file_path):
+                with open(file_path, 'r', encoding='utf-8') as f:
                     return f.read()
             return 'Analyst page not found', 404
         
         @self.app.route('/change-password.html')
         def change_password_page():
-            if os.path.exists('change-password.html'):
-                with open('change-password.html', 'r', encoding='utf-8') as f:
+            file_path = os.path.join(base_dir, 'change-password.html')
+            if os.path.exists(file_path):
+                with open(file_path, 'r', encoding='utf-8') as f:
                     return f.read()
             return 'Change password page not found', 404
         
-        # Serve CSS and JS files
-        @self.app.route('/<path:filename>')
-        def serve_static(filename):
-            if filename.endswith(('.css', '.js')) and os.path.exists(filename):
-                with open(filename, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                    mimetype = 'text/css' if filename.endswith('.css') else 'application/javascript'
-                    return Response(content, mimetype=mimetype)
-            return 'File not found', 404
-        
-        # Public endpoints
+        # Public endpoints (register BEFORE catch-all route)
         self.app.add_url_rule('/api/login', 'login', self.login, methods=['POST'])
         self.app.add_url_rule('/api/health', 'health', self.health_check, methods=['GET'])
         
@@ -1238,14 +1243,29 @@ class APIController:
                               AuthDecorators.require_analyst(self.archive_incident), methods=['POST'])
         self.app.add_url_rule('/api/analyst/tag-incident', 'tag', 
                               AuthDecorators.require_analyst(self.tag_incident), methods=['POST'])
-    
+        
         # Analyst report endpoints
         self.app.add_url_rule('/api/analyst/reports/threat', 'threat_report',
                             AuthDecorators.require_analyst(self.threat_report), methods=['GET'])
         self.app.add_url_rule('/api/analyst/reports/incident', 'incident_report',
                             AuthDecorators.require_analyst(self.incident_report), methods=['GET'])
+        
         self.app.add_url_rule('/api/analyst/reports/monthly', 'monthly_report',
                             AuthDecorators.require_analyst(self.monthly_report_endpoint), methods=['GET'])
+        
+        # Serve CSS and JS files (MUST be absolutely last, after ALL routes)
+        @self.app.route('/<path:filename>')
+        def serve_static(filename):
+            # Don't serve API routes or empty paths
+            if filename.startswith('api/') or not filename:
+                return 'Not found', 404
+            file_path = os.path.join(base_dir, filename)
+            if filename.endswith(('.css', '.js')) and os.path.exists(file_path):
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    mimetype = 'text/css' if filename.endswith('.css') else 'application/javascript'
+                    return Response(content, mimetype=mimetype)
+            return 'File not found', 404
 
     # ---------- Public Endpoints ----------
     def health_check(self):
