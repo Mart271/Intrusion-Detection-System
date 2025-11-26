@@ -10,38 +10,56 @@
     <!-- Login Container -->
     <div class="container" id="loginContainer">
         <div class="left-panel">
-            <h1>SecureBank</h1>
-            <p>Access your account securely. Our advanced security systems protect your sensitive financial information 24/7.</p>
-            <div style="margin-top: 30px; opacity: 0.8;">
-                <p style="font-size: 0.9em;">🔒 256-bit SSL Encryption</p>
-                <p style="font-size: 0.9em;">🛡️ Brute Force Attack Protection </p>
+            <div class="left-panel-content">
+                <h1>SecureBank</h1>
+                <p>Access your account securely with enterprise-grade protection. Your financial data is safeguarded with military-grade encryption.</p>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <span class="feature-icon">🔒</span>
+                        <span>256-bit SSL Encryption</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🛡️</span>
+                        <span>Advanced Threat Protection</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">⚡</span>
+                        <span>Real-time Fraud Detection</span>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="right-panel">
             <div class="login-form">
                 <h2>Welcome Back</h2>
-                <p>Sign in to your account</p>
+                <p>Sign in to access your account</p>
                 
                 <div class="error-message" id="errorMessage">Invalid credentials. Please try again.</div>
                 <div class="success-message" id="successMessage">Login successful! Redirecting...</div>
                 
                 <form id="loginForm">
-                <div class="form-group">
-                    <label for="username">Username</label>
-                     <input type="text" id="username" name="username" placeholder="Enter your username" required autocomplete="off">
-                </div>
-                 <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" placeholder="Enter your password" required autocomplete="off">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">👤</span>
+                            <input type="text" id="username" name="username" placeholder="Enter your username" required autocomplete="off">
+                        </div>
                     </div>
-                        <button type="submit" class="login-btn">Sign In</button>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">🔑</span>
+                            <input type="password" id="password" name="password" placeholder="Enter your password" required autocomplete="off">
+                        </div>
+                    </div>
+                    <button type="submit" class="login-btn">Sign In</button>
                 </form>
                 
                 <div class="attempt-counter" id="attemptCounter">
                     Login attempts: <span id="attemptCount">0</span>
                 </div>
-                <div style="margin-top: 20px; font-size: 0.85em; color: #999; text-align: center;">
-                    <p>📝 Test Account: <strong>testuser</strong></p>
+                <div class="test-credentials">
+                    <p>🔐 Test Account: <strong>testuser</strong></p>
                     <p>🔑 Password: <strong>correct_password</strong></p>
                 </div>
             </div>
@@ -56,7 +74,7 @@
         </div>
 
         <div class="dashboard-header">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
                 <div>
                     <h1>Customer Dashboard</h1>
                     <p>Welcome back, <strong id="loggedUser"></strong></p>
@@ -71,8 +89,8 @@
                     <div class="card-icon">💰</div>
                     Account Balance
                 </h3>
-                <p style="font-size: 2em; color: #27ae60; font-weight: 700;">$45,782.50</p>
-                <p style="color: #666; margin-top: 10px;">Checking Account</p>
+                <p style="font-size: 2.2em; color: #059669; font-weight: 800;">$45,782.50</p>
+                <p style="color: #6b7280; margin-top: 10px; font-weight: 500;">Checking Account</p>
             </div>
 
             <div class="card">
@@ -80,8 +98,8 @@
                     <div class="card-icon">💳</div>
                     Credit Card
                 </h3>
-                <p style="font-size: 2em; color: #3498db; font-weight: 700;">$2,340.00</p>
-                <p style="color: #666; margin-top: 10px;">Available Credit: $7,660</p>
+                <p style="font-size: 2.2em; color: #2563eb; font-weight: 800;">$2,340.00</p>
+                <p style="color: #6b7280; margin-top: 10px; font-weight: 500;">Available: $7,660</p>
             </div>
 
             <div class="card">
@@ -89,13 +107,13 @@
                     <div class="card-icon">📊</div>
                     Investments
                 </h3>
-                <p style="font-size: 2em; color: #9b59b6; font-weight: 700;">$123,456.78</p>
-                <p style="color: #27ae60; margin-top: 10px;">↑ +5.2% This Month</p>
+                <p style="font-size: 2.2em; color: #7c3aed; font-weight: 800;">$123,456.78</p>
+                <p style="color: #059669; margin-top: 10px; font-weight: 600;">↑ +5.2% This Month</p>
             </div>
         </div>
 
         <div class="data-table">
-            <h3 style="margin-bottom: 20px; color: #333;">Recent Transactions</h3>
+            <h3>Recent Transactions</h3>
             <table>
                 <thead>
                     <tr>
@@ -109,117 +127,117 @@
                     <tr>
                         <td>2025-11-05</td>
                         <td>Amazon Purchase</td>
-                        <td>-$156.99</td>
+                        <td style="font-weight: 600;">-$156.99</td>
                         <td><span class="status-badge status-active">Completed</span></td>
                     </tr>
                     <tr>
                         <td>2025-11-04</td>
                         <td>Salary Deposit</td>
-                        <td style="color: #27ae60;">+$5,500.00</td>
+                        <td style="color: #059669; font-weight: 600;">+$5,500.00</td>
                         <td><span class="status-badge status-active">Completed</span></td>
                     </tr>
                     <tr>
                         <td>2025-11-03</td>
                         <td>Electric Bill Payment</td>
-                        <td>-$89.45</td>
+                        <td style="font-weight: 600;">-$89.45</td>
                         <td><span class="status-badge status-active">Completed</span></td>
                     </tr>
                     <tr>
                         <td>2025-11-02</td>
                         <td>Grocery Store</td>
-                        <td>-$234.67</td>
+                        <td style="font-weight: 600;">-$234.67</td>
                         <td><span class="status-badge status-active">Completed</span></td>
                     </tr>
                     <tr>
                         <td>2025-11-01</td>
                         <td>Wire Transfer</td>
-                        <td>-$1,000.00</td>
+                        <td style="font-weight: 600;">-$1,000.00</td>
                         <td><span class="status-badge status-pending">Pending</span></td>
                     </tr>
                     <tr>
                         <td>2025-10-31</td>
                         <td>Restaurant - Italian Bistro</td>
-                        <td>-$87.32</td>
+                        <td style="font-weight: 600;">-$87.32</td>
                         <td><span class="status-badge status-active">Completed</span></td>
                     </tr>
                     <tr>
                         <td>2025-10-30</td>
                         <td>Gas Station</td>
-                        <td>-$45.00</td>
+                        <td style="font-weight: 600;">-$45.00</td>
                         <td><span class="status-badge status-active">Completed</span></td>
                     </tr>
                     <tr>
                         <td>2025-10-29</td>
                         <td>Netflix Subscription</td>
-                        <td>-$15.99</td>
+                        <td style="font-weight: 600;">-$15.99</td>
                         <td><span class="status-badge status-active">Completed</span></td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
-        <div class="data-table" style="margin-top: 20px;">
-            <h3 style="margin-bottom: 20px; color: #333;">Personal Information</h3>
+        <div class="data-table">
+            <h3>Personal Information</h3>
             <table>
                 <tbody>
                     <tr>
-                        <td style="font-weight: 600; width: 200px;">Full Name</td>
+                        <td style="font-weight: 700; width: 200px; color: #374151;">Full Name</td>
                         <td>John Anderson Smith</td>
                     </tr>
                     <tr>
-                        <td style="font-weight: 600;">Email</td>
+                        <td style="font-weight: 700; color: #374151;">Email</td>
                         <td>john.smith@securebank.com</td>
                     </tr>
                     <tr>
-                        <td style="font-weight: 600;">Phone</td>
+                        <td style="font-weight: 700; color: #374151;">Phone</td>
                         <td>+1 (555) 123-4567</td>
                     </tr>
                     <tr>
-                        <td style="font-weight: 600;">Address</td>
+                        <td style="font-weight: 700; color: #374151;">Address</td>
                         <td>123 Main Street, New York, NY 10001</td>
                     </tr>
                     <tr>
-                        <td style="font-weight: 600;">Social Security</td>
+                        <td style="font-weight: 700; color: #374151;">Social Security</td>
                         <td>***-**-4829</td>
                     </tr>
                     <tr>
-                        <td style="font-weight: 600;">Account Number</td>
+                        <td style="font-weight: 700; color: #374151;">Account Number</td>
                         <td>****-****-****-7892</td>
                     </tr>
                     <tr>
-                        <td style="font-weight: 600;">Date of Birth</td>
+                        <td style="font-weight: 700; color: #374151;">Date of Birth</td>
                         <td>March 15, 1985</td>
                     </tr>
                     <tr>
-                        <td style="font-weight: 600;">Member Since</td>
+                        <td style="font-weight: 700; color: #374151;">Member Since</td>
                         <td>January 2010</td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
-        <div class="data-table" style="margin-top: 20px;">
-            <h3 style="margin-bottom: 20px; color: #333;">Security Information</h3>
+        <div class="data-table">
+            <h3>Security Information</h3>
             <table>
                 <tbody>
                     <tr>
-                        <td style="font-weight: 600; width: 200px;">Last Login</td>
+                        <td style="font-weight: 700; width: 200px; color: #374151;">Last Login</td>
                         <td>November 5, 2025 - 14:32 PM EST</td>
                     </tr>
                     <tr>
-                        <td style="font-weight: 600;">Login IP Address</td>
+                        <td style="font-weight: 700; color: #374151;">Login IP Address</td>
                         <td>192.168.1.105</td>
                     </tr>
                     <tr>
-                        <td style="font-weight: 600;">Two-Factor Auth</td>
+                        <td style="font-weight: 700; color: #374151;">Two-Factor Auth</td>
                         <td><span class="status-badge status-active">Enabled</span></td>
                     </tr>
                     <tr>
-                        <td style="font-weight: 600;">Security Question</td>
+                        <td style="font-weight: 700; color: #374151;">Security Question</td>
                         <td>What is your mother's maiden name?</td>
                     </tr>
                     <tr>
-                        <td style="font-weight: 600;">Recovery Email</td>
+                        <td style="font-weight: 700; color: #374151;">Recovery Email</td>
                         <td>j.smith.backup@email.com</td>
                     </tr>
                 </tbody>
