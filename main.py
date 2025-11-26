@@ -98,6 +98,36 @@ class DetectionThresholds:
     sustained_attack_window: int = 600
 
 # ============================================================================
+# UTILITY FUNCTIONS
+# ============================================================================
+
+def get_client_ip() -> str:
+    """
+    Get the real client IP address, handling reverse proxy scenarios.
+    
+    When deployed behind a reverse proxy (like Render.com, nginx, CloudFlare),
+    request.remote_addr returns the proxy's IP, not the client's.
+    We need to check X-Forwarded-For and other proxy headers.
+    """
+    # Try X-Forwarded-For first (most common proxy header)
+    if request.headers.get('X-Forwarded-For'):
+        # X-Forwarded-For can contain multiple IPs: "client, proxy1, proxy2"
+        # The first one is the original client
+        ip = request.headers.get('X-Forwarded-For').split(',')[0].strip()
+        return ip
+    
+    # Try X-Real-IP (used by some proxies like nginx)
+    if request.headers.get('X-Real-IP'):
+        return request.headers.get('X-Real-IP').strip()
+    
+    # Try CF-Connecting-IP (CloudFlare specific)
+    if request.headers.get('CF-Connecting-IP'):
+        return request.headers.get('CF-Connecting-IP').strip()
+    
+    # Fallback to remote_addr (direct connection, no proxy)
+    return request.remote_addr
+
+# ============================================================================
 # INPUT VALIDATOR
 # ============================================================================
 
@@ -1104,7 +1134,7 @@ class AuthDecorators:
                 if not session:
                     return ResponseHelper.error('Unauthorized - Please login', 401)
                 if session['role'] not in roles:
-                    ForensicLogModel.create("ACCESS_DENIED", session['username'], request.remote_addr, 
+                    ForensicLogModel.create("ACCESS_DENIED", session['username'], get_client_ip(), 
                                           "FORBIDDEN", f"Attempted access to {request.path}")
                     return ResponseHelper.error('Access denied - Insufficient privileges', 403)
                 g.current_user = session
@@ -1282,7 +1312,7 @@ class APIController:
             data = request.json or {}
             username = InputValidator.sanitize(data.get('username', ''))
             password = data.get('password', '')
-            ip = request.remote_addr
+            ip = get_client_ip()  # Get real client IP, handling reverse proxy
             location = IPLocationService.get_location(ip)
             
             # Rate limiting check
@@ -1342,7 +1372,7 @@ class APIController:
     def logout(self):
         token = request.headers.get('X-Session-Token', '')
         self.session_mgr.invalidate(token)
-        ForensicLogModel.create("LOGOUT", g.current_user['username'], request.remote_addr, "SESSION_ENDED", "Logout")
+        ForensicLogModel.create("LOGOUT", g.current_user['username'], get_client_ip(), "SESSION_ENDED", "Logout")
         return ResponseHelper.success('Logged out successfully')
     
     def change_password(self):
@@ -1365,7 +1395,7 @@ class APIController:
                 return ResponseHelper.error('Current password is incorrect', 401)
             
             if UserModel.update_password(username, new_password):
-                ForensicLogModel.create("PASSWORD_CHANGED", username, request.remote_addr, "UPDATE", "Password changed")
+                ForensicLogModel.create("PASSWORD_CHANGED", username, get_client_ip(), "UPDATE", "Password changed")
                 return ResponseHelper.success('Password changed successfully')
             else:
                 return ResponseHelper.error('Failed to change password', 500)
@@ -1430,7 +1460,7 @@ class APIController:
                         return ResponseHelper.error(msg, 400)
                     ConfigModel.set(key, value)
                 self.detector.reload_thresholds()
-                ForensicLogModel.create('CONFIG_UPDATED', g.current_user['username'], request.remote_addr, 
+                ForensicLogModel.create('CONFIG_UPDATED', g.current_user['username'], get_client_ip(), 
                                        'UPDATE', f'Config keys updated: {len(data)}')
                 return ResponseHelper.success('Configuration updated')
             except Exception as e:
@@ -1455,7 +1485,7 @@ class APIController:
                 if not name or not condition:
                     return ResponseHelper.error('Rule name and condition required', 400)
                 DetectionRuleModel.create(name, condition, data.get('severity', 'medium'), data.get('action', 'alert'))
-                ForensicLogModel.create('RULE_CREATED', g.current_user['username'], request.remote_addr, 'CREATE', f"Rule created")
+                ForensicLogModel.create('RULE_CREATED', g.current_user['username'], get_client_ip(), 'CREATE', f"Rule created")
                 return ResponseHelper.success('Rule created successfully')
             except Exception as e:
                 logger.error(f"Rules POST error: {type(e).__name__}")
@@ -1466,7 +1496,7 @@ class APIController:
             data = request.json or {}
             active = data.get('active', True)
             DetectionRuleModel.toggle(rule_id, active)
-            ForensicLogModel.create('RULE_TOGGLED', g.current_user['username'], request.remote_addr, 
+            ForensicLogModel.create('RULE_TOGGLED', g.current_user['username'], get_client_ip(), 
                                    'ENABLE' if active else 'DISABLE', f"Rule ID: {rule_id}")
             return ResponseHelper.success('Rule updated')
         except Exception as e:
@@ -1476,7 +1506,7 @@ class APIController:
     def delete_rule(self, rule_id: int):
         try:
             DetectionRuleModel.delete_by_id(rule_id)
-            ForensicLogModel.create('RULE_DELETED', g.current_user['username'], request.remote_addr, 'DELETE', f"Rule ID: {rule_id}")
+            ForensicLogModel.create('RULE_DELETED', g.current_user['username'], get_client_ip(), 'DELETE', f"Rule ID: {rule_id}")
             return ResponseHelper.success('Rule deleted')
         except Exception as e:
             logger.error(f"Delete rule error: {type(e).__name__}")
@@ -1526,7 +1556,7 @@ class APIController:
             if LockedAccountModel.is_locked(username):
                 return ResponseHelper.error('Account is already locked', 400)
             LockedAccountModel.lock(username, reason, DetectionThresholds().lockout_duration, g.current_user['username'])
-            ForensicLogModel.create('ACCOUNT_LOCKED', g.current_user['username'], request.remote_addr, 'LOCK', f'Account locked')
+            ForensicLogModel.create('ACCOUNT_LOCKED', g.current_user['username'], get_client_ip(), 'LOCK', f'Account locked')
             NotificationService.account_locked(username, reason)
             logger.info(f"Account locked by admin")
             return ResponseHelper.success(f'Account locked successfully')
@@ -1542,7 +1572,7 @@ class APIController:
             if not valid:
                 return ResponseHelper.error(msg, 400)
             LockedAccountModel.unlock(username)
-            ForensicLogModel.create('ACCOUNT_UNLOCKED', g.current_user['username'], request.remote_addr, 'UNLOCK', 'Account unlocked')
+            ForensicLogModel.create('ACCOUNT_UNLOCKED', g.current_user['username'], get_client_ip(), 'UNLOCK', 'Account unlocked')
             NotificationService.account_unlocked(username)
             logger.info(f"Account unlocked by admin")
             return ResponseHelper.success(f'Account unlocked successfully')
@@ -1574,7 +1604,7 @@ class APIController:
     def weekly_report(self):
         try:
             report = ReportGenerator.weekly_report()
-            ForensicLogModel.create('REPORT_GENERATED', g.current_user['username'], request.remote_addr, 'REPORT', 'Weekly report')
+            ForensicLogModel.create('REPORT_GENERATED', g.current_user['username'], get_client_ip(), 'REPORT', 'Weekly report')
             return jsonify(report)
         except Exception as e:
             logger.error(f"Weekly report error: {type(e).__name__}")
@@ -1585,7 +1615,7 @@ class APIController:
             if data_type not in ['login_events', 'alerts', 'forensic_logs']:
                 return ResponseHelper.error('Invalid data type', 400)
             csv_data = ReportGenerator.export_csv(data_type)
-            ForensicLogModel.create('DATA_EXPORT', g.current_user['username'], request.remote_addr, 'EXPORT', f'{data_type}')
+            ForensicLogModel.create('DATA_EXPORT', g.current_user['username'], get_client_ip(), 'EXPORT', f'{data_type}')
             return Response(csv_data, mimetype='text/csv', headers={'Content-Disposition': f'attachment;filename={data_type}.csv'})
         except Exception as e:
             logger.error(f"Export error: {type(e).__name__}")
@@ -1621,7 +1651,7 @@ class APIController:
             analyst = g.current_user['username']
             AlertModel.resolve(incident_id, analyst)
             DetectionPatternModel.update_review(incident_id, ReviewStatus.ESCALATED.value, analyst)
-            ForensicLogModel.create("INCIDENT_ESCALATED", analyst, request.remote_addr, "ESCALATE", f"Alert #{incident_id}")
+            ForensicLogModel.create("INCIDENT_ESCALATED", analyst, get_client_ip(), "ESCALATE", f"Alert #{incident_id}")
             logger.info(f"Alert #{incident_id} escalated")
             return ResponseHelper.success('Incident escalated to administrator')
         except Exception as e:
@@ -1637,7 +1667,7 @@ class APIController:
             analyst = g.current_user['username']
             AlertModel.resolve(incident_id, analyst)
             DetectionPatternModel.update_review(incident_id, ReviewStatus.ARCHIVED.value, analyst)
-            ForensicLogModel.create("INCIDENT_ARCHIVED", analyst, request.remote_addr, "ARCHIVE", f"Alert #{incident_id}")
+            ForensicLogModel.create("INCIDENT_ARCHIVED", analyst, get_client_ip(), "ARCHIVE", f"Alert #{incident_id}")
             logger.info(f"Alert #{incident_id} archived")
             return ResponseHelper.success('Incident archived')
         except Exception as e:
@@ -1652,7 +1682,7 @@ class APIController:
             if not incident_id or not tag:
                 return ResponseHelper.error('Incident ID and tag required', 400)
             analyst = g.current_user['username']
-            ForensicLogModel.create("INCIDENT_TAGGED", analyst, request.remote_addr, "TAG", f"Alert #{incident_id} tagged: {tag}")
+            ForensicLogModel.create("INCIDENT_TAGGED", analyst, get_client_ip(), "TAG", f"Alert #{incident_id} tagged: {tag}")
             logger.info(f"Alert #{incident_id} tagged")
             return ResponseHelper.success(f'Incident tagged with: {tag}')
         except Exception as e:
@@ -1664,7 +1694,7 @@ class APIController:
         try:
             report = ReportGenerator.monthly_report()
             ForensicLogModel.create('REPORT_GENERATED', g.current_user['username'], 
-                                request.remote_addr, 'REPORT', 'Monthly report')
+                                get_client_ip(), 'REPORT', 'Monthly report')
             return jsonify(report)
         except Exception as e:
             logger.error(f"Monthly report error: {type(e).__name__}")
@@ -1675,7 +1705,7 @@ class APIController:
         try:
             report = ReportGenerator.threat_intelligence_report()
             ForensicLogModel.create('REPORT_GENERATED', g.current_user['username'], 
-                                request.remote_addr, 'REPORT', 'Threat intelligence')
+                                get_client_ip(), 'REPORT', 'Threat intelligence')
             return jsonify(report)
         except Exception as e:
             logger.error(f"Threat report error: {type(e).__name__}")
@@ -1686,7 +1716,7 @@ class APIController:
         try:
             report = ReportGenerator.incident_response_report()
             ForensicLogModel.create('REPORT_GENERATED', g.current_user['username'], 
-                                request.remote_addr, 'REPORT', 'Incident response')
+                                get_client_ip(), 'REPORT', 'Incident response')
             return jsonify(report)
         except Exception as e:
             logger.error(f"Incident report error: {type(e).__name__}")

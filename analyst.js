@@ -28,6 +28,29 @@ class SessionManager {
     static isAnalyst() { return ['analyst', 'admin'].includes(this.getRole()); }
 }
 
+// Timezone Utility - Converts UTC timestamps to local time
+class TimezoneUtil {
+    static formatToLocal(utcTimestamp, showSeconds = true) {
+        if (!utcTimestamp) return 'N/A';
+        try {
+            const date = new Date(utcTimestamp);
+            if (isNaN(date.getTime())) return utcTimestamp;
+            const options = {
+                year: 'numeric',
+                month: 'short',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            };
+            if (showSeconds) options.second = '2-digit';
+            return date.toLocaleString('en-US', options);
+        } catch (e) {
+            return utcTimestamp;
+        }
+    }
+}
+
 // Notification Service
 class NotificationService {
     static show(msg, type = 'info') {
@@ -238,7 +261,7 @@ function renderIncidents() {
         return `
             <tr>
                 <td style="padding:1rem;"><input type="checkbox" ${checked} onchange="toggleSelect(${inc.id})"></td>
-                <td style="padding:1rem;color:#94a3b8;font-size:0.875rem;">${new Date(inc.timestamp).toLocaleString()}</td>
+                <td style="padding:1rem;color:#94a3b8;font-size:0.875rem;">${TimezoneUtil.formatToLocal(inc.timestamp)}</td>
                 <td style="padding:1rem;"><span style="color:#f87171;">!</span> <span style="color:#e2e8f0;font-weight:500;">${InputValidator.sanitize(inc.alert_type)}</span></td>
                 <td style="padding:1rem;color:#cbd5e1;">${InputValidator.sanitize(inc.username)}</td>
                 <td style="padding:1rem;"><code style="background:#0f172a;padding:0.25rem 0.5rem;border-radius:0.25rem;color:#93c5fd;font-size:0.875rem;">${InputValidator.sanitize(inc.ip_address)}</code></td>

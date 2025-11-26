@@ -24,6 +24,74 @@ class SessionManager {
     static isAdmin() { return this.getRole() === 'admin'; }
 }
 
+// Timezone Utility - Converts UTC timestamps to local time
+class TimezoneUtil {
+    /**
+     * Format a UTC timestamp to local timezone
+     * @param {string} utcTimestamp - ISO timestamp from server (UTC)
+     * @param {boolean} showSeconds - Whether to show seconds
+     * @returns {string} Formatted local time
+     */
+    static formatToLocal(utcTimestamp, showSeconds = true) {
+        if (!utcTimestamp) return 'N/A';
+        
+        try {
+            // Create date object (JavaScript automatically handles UTC ISO strings)
+            const date = new Date(utcTimestamp);
+            
+            // Check if valid date
+            if (isNaN(date.getTime())) return utcTimestamp;
+            
+            // Format options
+            const options = {
+                year: 'numeric',
+                month: 'short',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            };
+            
+            if (showSeconds) {
+                options.second = '2-digit';
+            }
+            
+            // Convert to local timezone
+            return date.toLocaleString('en-US', options);
+        } catch (e) {
+            console.error('Date formatting error:', e);
+            return utcTimestamp;
+        }
+    }
+    
+    /**
+     * Format relative time (e.g., "2 hours ago")
+     */
+    static formatRelative(utcTimestamp) {
+        if (!utcTimestamp) return 'N/A';
+        
+        try {
+            const date = new Date(utcTimestamp);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins} min ago`;
+            
+            const diffHours = Math.floor(diffMins / 60);
+            if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+            
+            const diffDays = Math.floor(diffHours / 24);
+            if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+            
+            return this.formatToLocal(utcTimestamp, false);
+        } catch (e) {
+            return utcTimestamp;
+        }
+    }
+}
+
 // Input Validator
 class InputValidator {
     static validateIP(ip) {
@@ -229,7 +297,7 @@ async function loadUsersTable() {
         tbody.innerHTML = users.map(u => `<tr>
             <td>${InputValidator.sanitize(u.username)}</td><td>${InputValidator.sanitize(u.ip)}</td>
             <td><strong style="color:${u.failed >= 3 ? '#f87171' : '#4ade80'}">${u.failed}</strong></td>
-            <td>${new Date(u.lastAttempt).toLocaleString()}</td>
+            <td>${TimezoneUtil.formatToLocal(u.lastAttempt)}</td>
             <td><span class="badge ${u.failed >= 3 ? 'danger' : 'success'}">${u.failed >= 3 ? 'SUSPICIOUS' : 'NORMAL'}</span></td>
             <td><button style="padding:0.5rem;font-size:0.75rem;" class="danger" onclick="lockAccountQuick('${u.username}')">Lock</button></td>
         </tr>`).join('');
@@ -249,7 +317,7 @@ async function loadBlockedIPsTable() {
         if (suspicious.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No suspicious IPs</td></tr>'; return; }
         tbody.innerHTML = suspicious.map(i => `<tr>
             <td>${InputValidator.sanitize(i.ip)}</td><td><strong style="color:#f87171">${i.failed}</strong></td>
-            <td>${new Date(i.firstSeen).toLocaleString()}</td>
+            <td>${TimezoneUtil.formatToLocal(i.firstSeen)}</td>
             <td><button style="padding:0.5rem;font-size:0.75rem;" class="danger" onclick="blockIPQuick('${i.ip}')">Block</button>
                 <button style="padding:0.5rem;font-size:0.75rem;" class="success" onclick="unblockIPQuick('${i.ip}')">Unblock</button></td>
         </tr>`).join('');
