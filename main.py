@@ -1218,6 +1218,7 @@ class APIController:
                     return f.read()
             return 'Change password page not found', 404
         
+        
         # Public endpoints (register BEFORE catch-all route)
         self.app.add_url_rule('/api/login', 'login', self.login, methods=['POST'])
         self.app.add_url_rule('/api/health', 'health', self.health_check, methods=['GET'])
@@ -1237,11 +1238,8 @@ class APIController:
                               AuthDecorators.require_auth(self.get_login_history), methods=['GET'])
         
         # Admin endpoints - require admin role
-        self.app.add_url_rule('/api/admin/config', 'config', 
+        self.app.add_url_rule('/api/admin/config', 'admin_config_endpoint', 
                               AuthDecorators.require_admin(self.admin_config), methods=['GET', 'POST'])
-        self.app.add_url_rule('/api/admin/rules', 'rules',)
-        self.app.add_url_rule('/api/admin/locked-accounts', 'locked_accounts_list',
-                              AuthDecorators.require_admin(self.get_locked_accounts), methods=['GET'])
         self.app.add_url_rule('/api/admin/rules', 'rules',                      
                               AuthDecorators.require_admin(self.admin_rules), methods=['GET', 'POST'])
         self.app.add_url_rule('/api/admin/rules/<int:rule_id>/toggle', 'toggle_rule', 
