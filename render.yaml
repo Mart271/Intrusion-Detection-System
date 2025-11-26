@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: ids-system
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn main:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: IDS_HOST
+        value: 0.0.0.0
+      - key: IDS_SECRET_KEY
+        generateValue: true
+      - key: IDS_ADMIN_PASSWORD
+        sync: false
+      - key: IDS_ANALYST_PASSWORD
+        sync: false
+      - key: IDS_USER_PASSWORD
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+

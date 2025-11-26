@@ -30,8 +30,8 @@ class Config:
     ENV: str = os.environ.get('FLASK_ENV', 'development')
     DEBUG: bool = field(init=False)
     DB_PATH: str = os.environ.get('IDS_DB_PATH', 'ids_system.db')
-    HOST: str = os.environ.get('IDS_HOST', '127.0.0.1')  # CHANGED: Default to localhost, not 0.0.0.0
-    PORT: int = int(os.environ.get('IDS_PORT', 5000))
+    HOST: str = os.environ.get('IDS_HOST', '0.0.0.0')  # 0.0.0.0 for Render.com compatibility
+    PORT: int = int(os.environ.get('PORT', os.environ.get('IDS_PORT', 5000)))  # Render uses PORT env var
     SESSION_TIMEOUT: int = int(os.environ.get('SESSION_TIMEOUT', 30))
     RATE_LIMIT_MAX: int = int(os.environ.get('RATE_LIMIT_MAX', 10))
     RATE_LIMIT_WINDOW: int = int(os.environ.get('RATE_LIMIT_WINDOW', 60))
@@ -1137,6 +1137,52 @@ class APIController:
         """
         SECURITY FIX: All protected routes now use authentication decorators
         """
+        # Serve static HTML files
+        @self.app.route('/')
+        def index():
+            if os.path.exists('login.html'):
+                with open('login.html', 'r', encoding='utf-8') as f:
+                    return f.read()
+            return 'IDS System API - Use /api/health to check status'
+        
+        @self.app.route('/login.html')
+        def login_page():
+            if os.path.exists('login.html'):
+                with open('login.html', 'r', encoding='utf-8') as f:
+                    return f.read()
+            return 'Login page not found', 404
+        
+        @self.app.route('/admin.html')
+        def admin_page():
+            if os.path.exists('admin.html'):
+                with open('admin.html', 'r', encoding='utf-8') as f:
+                    return f.read()
+            return 'Admin page not found', 404
+        
+        @self.app.route('/analyst.html')
+        def analyst_page():
+            if os.path.exists('analyst.html'):
+                with open('analyst.html', 'r', encoding='utf-8') as f:
+                    return f.read()
+            return 'Analyst page not found', 404
+        
+        @self.app.route('/change-password.html')
+        def change_password_page():
+            if os.path.exists('change-password.html'):
+                with open('change-password.html', 'r', encoding='utf-8') as f:
+                    return f.read()
+            return 'Change password page not found', 404
+        
+        # Serve CSS and JS files
+        @self.app.route('/<path:filename>')
+        def serve_static(filename):
+            if filename.endswith(('.css', '.js')) and os.path.exists(filename):
+                with open(filename, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    mimetype = 'text/css' if filename.endswith('.css') else 'application/javascript'
+                    return Response(content, mimetype=mimetype)
+            return 'File not found', 404
+        
         # Public endpoints
         self.app.add_url_rule('/api/login', 'login', self.login, methods=['POST'])
         self.app.add_url_rule('/api/health', 'health', self.health_check, methods=['GET'])
@@ -1632,7 +1678,7 @@ class APIController:
 
 class IDSApplication:
     def __init__(self):
-        self.app = Flask(__name__)
+        self.app = Flask(__name__, static_folder='.', static_url_path='')
         self.app.secret_key = config.SECRET_KEY
         self._setup_cors()
         self._setup_security_headers()
@@ -1644,8 +1690,17 @@ class IDSApplication:
     
     def _setup_cors(self):
         """Configure CORS with restricted origins"""
-        CORS(self.app, origins=['http://localhost:5000', 'http://127.0.0.1:5000',
-                            'http://localhost:5001', 'http://127.0.0.1:5001'])
+        # In development, allow all origins for easier testing
+        # In production, use CORS_ORIGINS environment variable
+        if config.ENV == 'development':
+            CORS(self.app, origins='*')
+        else:
+            # Production: use configured origins or default to localhost
+            origins = config.CORS_ORIGINS.split(',') if config.CORS_ORIGINS else [
+                'http://localhost:5000', 'http://127.0.0.1:5000',
+                'http://localhost:5001', 'http://127.0.0.1:5001'
+            ]
+            CORS(self.app, origins=origins)
     
     def _setup_security_headers(self):
         """Add security headers to all responses"""
@@ -1805,10 +1860,14 @@ class IDSApplication:
             except Exception:
                 pass
     def run(self, host: str = None, port: int = None, debug: bool = None):
+        # For Render.com and production: use environment PORT, bind to 0.0.0.0
+        run_host = host or config.HOST
+        run_port = port or config.PORT
+        run_debug = debug if debug is not None else config.DEBUG
         self.app.run(
-            host=host or config.HOST, 
-            port=port or config.PORT, 
-            debug=debug if debug is not None else config.DEBUG
+            host=run_host, 
+            port=run_port, 
+            debug=run_debug
         )
 # ============================================================================
 # MAIN ENTRY POINT
@@ -1816,7 +1875,7 @@ class IDSApplication:
 
 if __name__ == '__main__':
     ids = IDSApplication()
-    app = IDSApplication().app
+    
 
     
     # SECURITY FIX: Don't log credentials

@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+*.egg-info/
+dist/
+build/
+
+# Database files (contains sensitive data)
+*.db
+*.sqlite
+*.sqlite3
+ids_system.db
+
+# Logs
+*.log
+ids_system.log
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Deployment
+*.pid
+*.sock
+
+# Temporary files
+*.tmp
+*.bak
+*~
+
+# Render
+.render/
+
