@@ -37,6 +37,7 @@
                 <div class="stat-card orange"><h3>Blocked IPs</h3><div class="stat-value" id="blockedIPs">-</div></div>
                 <div class="stat-card red"><h3>Locked Users</h3><div class="stat-value" id="lockedUsers">-</div></div>
                 <div class="stat-card orange"><h3>Rate Limited</h3><div class="stat-value" id="rateLimitedIPs">-</div></div>
+                <div class="stat-card red"><h3>⚠️ Escalated Incidents</h3><div class="stat-value" id="escalatedIncidents">-</div></div>
             </div>
 
             <div class="section">
@@ -65,6 +66,30 @@
                     <table>
                         <thead><tr><th>Username</th><th>Locked At</th><th>Auto Unlock</th><th>Actions</th></tr></thead>
                         <tbody id="lockedAccountsTable"><tr><td colspan="4" class="empty-state">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>⚠️ Escalated Incidents - Analyst Review Required</h2>
+                <p style="color:#94a3b8;margin-bottom:1rem;">Security incidents escalated by analysts requiring administrative action and resolution.</p>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Detection Time</th>
+                                <th>Severity</th>
+                                <th>Pattern Type</th>
+                                <th>Username</th>
+                                <th>IP Address</th>
+                                <th>Escalated By</th>
+                                <th>Escalation Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="escalatedIncidentsTable">
+                            <tr><td colspan="8" class="empty-state">Loading...</td></tr>
+                        </tbody>
                     </table>
                 </div>
             </div>

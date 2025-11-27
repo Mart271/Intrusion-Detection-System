@@ -235,6 +235,7 @@ async function loadAdminData() {
         document.getElementById('lockedUsers').textContent = stats.locked_accounts || 0;
         document.getElementById('rateLimitedIPs').textContent = stats.rate_limited_ips || 0;
         loadUsersTable(); loadBlockedIPsTable(); loadLockedAccountsTable(); loadConfig(); loadRateLimiterStats();
+        loadEscalatedIncidentsCount(); loadEscalatedIncidentsTable(); // NEW: Load escalated incidents
     } catch (e) { console.error('Load error:', e); }
 }
 
@@ -482,6 +483,179 @@ async function unlockAccount() {
 
 function lockAccountQuick(u) { if (confirm(`Lock account: ${u}?`)) { document.getElementById('username').value = u; lockAccount(); } }
 function unlockAccountQuick(u) { document.getElementById('username').value = u; unlockAccount(); }
+
+// ============================================================================
+// ESCALATED INCIDENTS MANAGEMENT - ADD THESE FUNCTIONS TO admin.js
+// Insert these after the unlockAccountQuick() function (around line 484)
+// ============================================================================
+
+// Escalated Incidents Management
+async function loadEscalatedIncidentsCount() {
+    try {
+        const data = await APIClient.get('/admin/escalated-incidents');
+        const count = data.incidents ? data.incidents.length : 0;
+        const el = document.getElementById('escalatedIncidents');
+        if (el) el.textContent = count;
+    } catch (e) {
+        console.error('Error loading escalated incidents count:', e);
+        const el = document.getElementById('escalatedIncidents');
+        if (el) el.textContent = '0';
+    }
+}
+
+async function loadEscalatedIncidentsTable() {
+    try {
+        const data = await APIClient.get('/admin/escalated-incidents');
+        const incidents = data.incidents || [];
+        const tbody = document.getElementById('escalatedIncidentsTable');
+        
+        if (!tbody) return;
+        
+        if (incidents.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No escalated incidents</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = incidents.map(inc => `
+            <tr>
+                <td>${TimezoneUtil.formatToLocal(inc.timestamp)}</td>
+                <td><span class="badge ${getSeverityClass(inc.severity)}">${InputValidator.sanitize(inc.severity || 'medium').toUpperCase()}</span></td>
+                <td>${InputValidator.sanitize(inc.pattern_type || inc.alert_type || 'Unknown')}</td>
+                <td>${InputValidator.sanitize(inc.username || 'N/A')}</td>
+                <td>${InputValidator.sanitize(inc.ip_address || 'N/A')}</td>
+                <td>${InputValidator.sanitize(inc.escalated_by || 'N/A')}</td>
+                <td>${TimezoneUtil.formatToLocal(inc.escalated_at)}</td>
+                <td>
+                    <button onclick="viewIncidentDetails(${inc.id})" class="btn" style="padding:0.5rem 1rem;font-size:0.85rem;">👁️ View</button>
+                    <button onclick="resolveEscalatedIncident(${inc.id})" class="btn success" style="padding:0.5rem 1rem;font-size:0.85rem;">✅ Resolve</button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        console.error('Error loading escalated incidents table:', e);
+        const tbody = document.getElementById('escalatedIncidentsTable');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Error loading escalated incidents</td></tr>';
+        }
+    }
+}
+
+function getSeverityClass(severity) {
+    const map = {
+        'critical': 'danger',
+        'high': 'danger', 
+        'medium': 'warning',
+        'low': 'success'
+    };
+    return map[severity] || 'warning';
+}
+
+async function resolveEscalatedIncident(incidentId) {
+    if (!confirm(`Mark incident #${incidentId} as resolved?`)) return;
+    
+    try {
+        NotificationService.show('Resolving incident...', 'info');
+        const response = await APIClient.post('/admin/resolve-incident', { 
+            incident_id: incidentId 
+        });
+        
+        if (response.success) {
+            NotificationService.show('Incident resolved successfully', 'success');
+            await loadEscalatedIncidentsCount();
+            await loadEscalatedIncidentsTable();
+            await loadDashboardStats();
+        } else {
+            NotificationService.show(response.message || 'Failed to resolve incident', 'error');
+        }
+    } catch (e) {
+        console.error('Error resolving incident:', e);
+        NotificationService.show('Error resolving incident', 'error');
+    }
+}
+
+async function viewIncidentDetails(incidentId) {
+    try {
+        const data = await APIClient.get(`/admin/incident-details/${incidentId}`);
+        const incident = data.incident;
+        
+        if (!incident) {
+            NotificationService.show('Incident not found', 'error');
+            return;
+        }
+        
+        const details = `
+            <div style="background:#1e293b;padding:2rem;border-radius:0.5rem;border:1px solid #334155;">
+                <h3 style="color:#60a5fa;margin-bottom:1.5rem;">🔍 Incident #${incident.id} - Details</h3>
+                
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:1.5rem;">
+                    <div style="background:#0f172a;padding:1rem;border-radius:0.375rem;">
+                        <strong style="color:#94a3b8;">Pattern Type:</strong><br>
+                        <span style="color:#e2e8f0;">${InputValidator.sanitize(incident.pattern_type || 'N/A')}</span>
+                    </div>
+                    <div style="background:#0f172a;padding:1rem;border-radius:0.375rem;">
+                        <strong style="color:#94a3b8;">Severity:</strong><br>
+                        <span class="badge ${getSeverityClass(incident.severity)}">${InputValidator.sanitize(incident.severity || 'medium').toUpperCase()}</span>
+                    </div>
+                    <div style="background:#0f172a;padding:1rem;border-radius:0.375rem;">
+                        <strong style="color:#94a3b8;">Username:</strong><br>
+                        <span style="color:#e2e8f0;">${InputValidator.sanitize(incident.username || 'N/A')}</span>
+                    </div>
+                    <div style="background:#0f172a;padding:1rem;border-radius:0.375rem;">
+                        <strong style="color:#94a3b8;">IP Address:</strong><br>
+                        <span style="color:#e2e8f0;">${InputValidator.sanitize(incident.ip_address || 'N/A')}</span>
+                    </div>
+                    <div style="background:#0f172a;padding:1rem;border-radius:0.375rem;">
+                        <strong style="color:#94a3b8;">Detection Time:</strong><br>
+                        <span style="color:#e2e8f0;">${TimezoneUtil.formatToLocal(incident.timestamp)}</span>
+                    </div>
+                    <div style="background:#0f172a;padding:1rem;border-radius:0.375rem;">
+                        <strong style="color:#94a3b8;">Escalated By:</strong><br>
+                        <span style="color:#e2e8f0;">${InputValidator.sanitize(incident.escalated_by || 'N/A')}</span>
+                    </div>
+                </div>
+                
+                <div style="background:#0f172a;padding:1rem;border-radius:0.375rem;margin-bottom:1rem;">
+                    <strong style="color:#94a3b8;">Description:</strong><br>
+                    <span style="color:#e2e8f0;">${InputValidator.sanitize(incident.description || 'No description available')}</span>
+                </div>
+                
+                ${incident.recommendation ? `
+                <div style="background:#0f172a;padding:1rem;border-radius:0.375rem;border-left:4px solid #f59e0b;">
+                    <strong style="color:#fbbf24;">💡 Analyst Recommendation:</strong><br>
+                    <span style="color:#e2e8f0;">${InputValidator.sanitize(incident.recommendation)}</span>
+                </div>
+                ` : ''}
+                
+                <div style="margin-top:1.5rem;display:flex;gap:0.5rem;">
+                    <button onclick="resolveEscalatedIncident(${incident.id})" class="btn success">✅ Resolve Incident</button>
+                    <button onclick="document.getElementById('incidentDetailsModal').style.display='none'" class="btn">❌ Close</button>
+                </div>
+            </div>
+        `;
+        
+        // Create or update modal
+        let modal = document.getElementById('incidentDetailsModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'incidentDetailsModal';
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:10000;';
+            document.body.appendChild(modal);
+        }
+        
+        modal.innerHTML = details;
+        modal.style.display = 'flex';
+        
+        // Close on click outside
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.style.display = 'none';
+        };
+        
+    } catch (e) {
+        console.error('Error viewing incident details:', e);
+        NotificationService.show('Error loading incident details', 'error');
+    }
+}
+
 
 // Reports
 async function generateWeeklyReport() {

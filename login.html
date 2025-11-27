@@ -37,22 +37,34 @@
                 <div class="error-message" id="errorMessage">Invalid credentials. Please try again.</div>
                 <div class="success-message" id="successMessage">Login successful! Redirecting...</div>
                 
-                <form id="loginForm">
+                <!-- Form with proper handlers to prevent reset -->
+                <form id="loginForm" onsubmit="handleLogin(event); return false;">
                     <div class="form-group">
                         <label for="username">Username</label>
                         <div class="input-wrapper">
                             <span class="input-icon">👤</span>
-                            <input type="text" id="username" name="username" placeholder="Enter your username" required autocomplete="off">
+                            <input type="text" 
+                                   id="username" 
+                                   name="username" 
+                                   placeholder="Enter your username" 
+                                   autocomplete="username"
+                                   autocorrect="off"
+                                   autocapitalize="off"
+                                   spellcheck="false">
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="password">Password</label>
                         <div class="input-wrapper">
                             <span class="input-icon">🔑</span>
-                            <input type="password" id="password" name="password" placeholder="Enter your password" required autocomplete="off">
+                            <input type="password" 
+                                   id="password" 
+                                   name="password" 
+                                   placeholder="Enter your password" 
+                                   autocomplete="current-password">
                         </div>
                     </div>
-                    <button type="submit" class="login-btn">Sign In</button>
+                    <button type="submit" class="login-btn" id="loginButton">Sign In</button>
                 </form>
                 
                 <div class="attempt-counter" id="attemptCounter">
@@ -60,7 +72,7 @@
                 </div>
                 <div class="test-credentials">
                     <p>🔐 Test Account: <strong>testuser</strong></p>
-                    <p>🔑 Password: <strong>correct_password</strong></p>
+                    <p>🔑 Password: <strong>User2024!Strong</strong></p>
                 </div>
             </div>
         </div>

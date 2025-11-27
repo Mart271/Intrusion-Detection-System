@@ -1,15 +1,14 @@
-// Auto-detect API base URL - works for both localhost and production (Render.com)
+// Auto-detect API base URL
 const API_BASE = (() => {
-    // If running on same domain (production), use relative path
     if (window.location.protocol === 'https:' || window.location.hostname !== 'localhost') {
         return '/api';
     }
-    // Local development
     return 'http://127.0.0.1:5000/api';
 })();
+
 let loginAttempts = 0;
 
-// Session Manager Class
+// Session Manager
 class SessionManager {
     static setSession(token, role, username) {
         sessionStorage.setItem('sessionToken', token);
@@ -40,7 +39,7 @@ class SessionManager {
     }
 }
 
-// API Client Class
+// API Client
 class APIClient {
     static getHeaders() {
         const headers = { 'Content-Type': 'application/json' };
@@ -62,16 +61,19 @@ class APIClient {
 }
 
 async function handleLogin(e) {
+    // CRITICAL: Prevent form submission
     if (e) {
         e.preventDefault();
         e.stopPropagation();
     }
     
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value;
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
     const errorMessage = document.getElementById('errorMessage');
     const successMessage = document.getElementById('successMessage');
-    const loginButton = document.querySelector('.login-btn');
+    const loginButton = document.getElementById('loginButton');
     
     if (loginButton.disabled) return;
     
@@ -90,18 +92,23 @@ async function handleLogin(e) {
             errorMessage.innerHTML = `<strong>Too Many Attempts!</strong><br>${data.message || 'Please wait before trying again.'}`;
             shakeForm();
             showRateLimitCountdown(loginButton, 60);
+            // Clear password only
+            console.log('Rate limited, clearing password...');
+            console.log('Password value BEFORE clear:', passwordInput.value);
+            setTimeout(() => {
+                passwordInput.value = '';
+                console.log('Password value AFTER clear:', passwordInput.value);
+            }, 100);
             return;
         }
         
         if (response.ok && data.success) {
-            // Store session
             SessionManager.setSession(data.session_token, data.role, data.username);
             
             errorMessage.style.display = 'none';
             successMessage.style.display = 'block';
             successMessage.textContent = data.message || 'Login successful! Redirecting...';
             
-            // Check password change requirement
             if (data.must_change_password) {
                 successMessage.textContent = 'Password change required. Redirecting...';
                 setTimeout(() => {
@@ -114,21 +121,29 @@ async function handleLogin(e) {
                 redirectBasedOnRole(data.role);
             }, 1500);
             
-        } else if (response.status === 403) {
+        } else {
+            // Failed login - show error
             successMessage.style.display = 'none';
             errorMessage.style.display = 'block';
-            errorMessage.innerHTML = `<strong>Access Denied!</strong><br>${data.message}`;
+            
+            if (response.status === 403) {
+                errorMessage.innerHTML = `<strong>Access Denied!</strong><br>${data.message}`;
+            } else {
+                errorMessage.textContent = data.message || 'Invalid username or password';
+            }
+            
             shakeForm();
             loginButton.disabled = false;
             loginButton.textContent = 'Sign In';
             
-        } else {
-            successMessage.style.display = 'none';
-            errorMessage.style.display = 'block';
-            errorMessage.textContent = data.message || 'Invalid username or password';
-            shakeForm();
-            loginButton.disabled = false;
-            loginButton.textContent = 'Sign In';
+            // CLEAR PASSWORD ONLY - KEEP USERNAME
+            console.log('About to clear password...');
+            console.log('Password value BEFORE clear:', passwordInput.value);
+            setTimeout(() => {
+                passwordInput.value = '';
+                console.log('Password value AFTER clear:', passwordInput.value);
+                passwordInput.focus();
+            }, 100);
         }
         
     } catch (error) {
@@ -139,6 +154,15 @@ async function handleLogin(e) {
         shakeForm();
         loginButton.disabled = false;
         loginButton.textContent = 'Sign In';
+        
+        // CLEAR PASSWORD ONLY - KEEP USERNAME
+        console.log('Error occurred, clearing password...');
+        console.log('Password value BEFORE clear:', passwordInput.value);
+        setTimeout(() => {
+            passwordInput.value = '';
+            console.log('Password value AFTER clear:', passwordInput.value);
+            passwordInput.focus();
+        }, 100);
     }
 }
 
@@ -172,7 +196,6 @@ function showRateLimitCountdown(btn, seconds) {
     
     const countdown = setInterval(() => {
         btn.textContent = `Wait ${seconds}s`;
-        // UPDATE ERROR MESSAGE IN REAL-TIME
         errorMessage.innerHTML = `<strong>Too Many Attempts!</strong><br>Please wait ${seconds} seconds before trying again.`;
         seconds--;
         
@@ -203,8 +226,10 @@ async function logout() {
     document.getElementById('attemptCount').textContent = '0';
 }
 
-// Check if already logged in on page load
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded, initializing...');
+    
     if (SessionManager.isLoggedIn()) {
         const role = SessionManager.getRole();
         if (role === 'admin' || role === 'analyst') {
@@ -213,12 +238,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Attach form submit handler
     const loginForm = document.getElementById('loginForm');
+    console.log('Login form found:', loginForm);
+    
     if (loginForm) {
         loginForm.addEventListener('submit', function(e) {
+            console.log('Form submitted!');
             e.preventDefault();
+            e.stopPropagation();
             handleLogin(e);
             return false;
         });
+    } else {
+        console.error('Login form not found!');
     }
 });

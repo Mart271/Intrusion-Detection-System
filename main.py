@@ -810,12 +810,38 @@ class IDSDetector:
 class AlertManager:
     @staticmethod
     def create(alert_type: str, username: str, ip: str, severity: str, details: str = '') -> int:
+        """
+        FIXED: Creates alert in BOTH alerts table (for admin tracking) 
+        AND detection_patterns table (for analyst review)
+        """
+        # Create in alerts table (for admin monitoring)
         alert_id = AlertModel.create(alert_type, username, ip, severity)
+        
+        # ALSO create in detection_patterns (for analyst workflow)
+        DetectionPatternModel.create(
+            pattern_type=alert_type,
+            username=username,
+            ip=ip,
+            severity=severity,
+            details=details or f"System-generated alert: {alert_type}"
+        )
+        
         ForensicLogModel.create("ALERT_CREATED", "SYSTEM", ip, f"ALERT_{severity.upper()}", f"{alert_type}")
         icon = {'low': '🟢', 'medium': '🟡', 'high': '🟠', 'critical': '🔴'}.get(severity, '⚪')
         logger.warning(f"{icon} ALERT: {alert_type} | {severity.upper()}")
         return alert_id
     
+    @staticmethod
+    def process_threats(threats: List[Dict]) -> None:
+        for threat in threats:
+            AlertManager.create(
+                threat['type'], 
+                threat['username'], 
+                threat['ip'], 
+                threat['severity'], 
+                threat.get('details', '')
+            )
+            NotificationService.security_alert(threat['username'], threat['type'], threat['severity'])
     @staticmethod
     def process_threats(threats: List[Dict]) -> None:
         for threat in threats:
@@ -1274,6 +1300,9 @@ class APIController:
                               AuthDecorators.require_analyst(self.archive_incident), methods=['POST'])
         self.app.add_url_rule('/api/analyst/tag-incident', 'tag', 
                               AuthDecorators.require_analyst(self.tag_incident), methods=['POST'])
+        self.app.add_url_rule('/api/admin/escalated-incidents', 'escalated_incidents',
+                              AuthDecorators.require_admin(self.get_escalated_incidents), 
+                              methods=['GET'])
         
         # Analyst report endpoints
         self.app.add_url_rule('/api/analyst/reports/threat', 'threat_report',
@@ -1644,37 +1673,109 @@ class APIController:
             return ResponseHelper.error('Server error', 500)
     
     def escalate_incident(self):
+        """
+        FIXED: Handle escalation for both alert and detection_pattern incidents
+        """
         try:
             data = request.json or {}
             incident_id = data.get('incident_id')
             if not incident_id:
                 return ResponseHelper.error('Incident ID required', 400)
+            
             analyst = g.current_user['username']
-            AlertModel.resolve(incident_id, analyst)
-            DetectionPatternModel.update_review(incident_id, ReviewStatus.ESCALATED.value, analyst)
-            ForensicLogModel.create("INCIDENT_ESCALATED", analyst, get_client_ip(), "ESCALATE", f"Alert #{incident_id}")
-            logger.info(f"Alert #{incident_id} escalated")
+            
+            # Handle both alert_xxx and det_xxx incident IDs
+            if isinstance(incident_id, str) and incident_id.startswith('det_'):
+                # Detection pattern incident - extract numeric ID
+                numeric_id = int(incident_id.replace('det_', ''))
+                DetectionPatternModel.update_review(numeric_id, ReviewStatus.ESCALATED.value, analyst)
+            else:
+                # Regular alert incident
+                AlertModel.resolve(incident_id, analyst)
+                # Also update detection_patterns if it exists
+                try:
+                    DetectionPatternModel.update_review(incident_id, ReviewStatus.ESCALATED.value, analyst)
+                except:
+                    pass  # Pattern might not exist for older alerts
+            
+            ForensicLogModel.create("INCIDENT_ESCALATED", analyst, get_client_ip(), 
+                                   "ESCALATE", f"Incident #{incident_id}")
+            logger.info(f"Incident #{incident_id} escalated by {analyst}")
             return ResponseHelper.success('Incident escalated to administrator')
         except Exception as e:
-            logger.error(f"Escalate error: {type(e).__name__}")
+            logger.error(f"Escalate error: {type(e).__name__}: {str(e)}")
             return ResponseHelper.error('Server error', 500)
     
     def archive_incident(self):
+        """
+        FIXED: Handle archiving for both alert and detection_pattern incidents
+        """
         try:
             data = request.json or {}
             incident_id = data.get('incident_id')
             if not incident_id:
                 return ResponseHelper.error('Incident ID required', 400)
+            
             analyst = g.current_user['username']
-            AlertModel.resolve(incident_id, analyst)
-            DetectionPatternModel.update_review(incident_id, ReviewStatus.ARCHIVED.value, analyst)
-            ForensicLogModel.create("INCIDENT_ARCHIVED", analyst, get_client_ip(), "ARCHIVE", f"Alert #{incident_id}")
-            logger.info(f"Alert #{incident_id} archived")
+            
+            # Handle both alert_xxx and det_xxx incident IDs
+            if isinstance(incident_id, str) and incident_id.startswith('det_'):
+                # Detection pattern incident - extract numeric ID
+                numeric_id = int(incident_id.replace('det_', ''))
+                DetectionPatternModel.update_review(numeric_id, ReviewStatus.ARCHIVED.value, analyst)
+            else:
+                # Regular alert incident
+                AlertModel.resolve(incident_id, analyst)
+                # Also update detection_patterns if it exists
+                try:
+                    DetectionPatternModel.update_review(incident_id, ReviewStatus.ARCHIVED.value, analyst)
+                except:
+                    pass  # Pattern might not exist for older alerts
+            
+            ForensicLogModel.create("INCIDENT_ARCHIVED", analyst, get_client_ip(), 
+                                   "ARCHIVE", f"Incident #{incident_id}")
+            logger.info(f"Incident #{incident_id} archived by {analyst}")
             return ResponseHelper.success('Incident archived')
         except Exception as e:
-            logger.error(f"Archive error: {type(e).__name__}")
+            logger.error(f"Archive error: {type(e).__name__}: {str(e)}")
             return ResponseHelper.error('Server error', 500)
     
+    def get_escalated_incidents(self):
+        """
+        NEW: Get all incidents escalated by analysts for admin review
+        """
+        try:
+            limit = min(request.args.get('limit', 100, type=int), 500)
+            rows = db.query('''
+                SELECT id, pattern_type, username, ip_address, timestamp, severity, 
+                       details, reviewed_by, reviewed_at, analyst_notes
+                FROM detection_patterns 
+                WHERE analyst_review = 'escalated'
+                ORDER BY timestamp DESC 
+                LIMIT ?
+            ''', (limit,))
+            
+            incidents = [{
+                'id': r['id'],
+                'type': r['pattern_type'],
+                'username': r['username'],
+                'ip_address': r['ip_address'],
+                'timestamp': r['timestamp'],
+                'severity': r['severity'],
+                'details': r['details'],
+                'escalated_by': r['reviewed_by'],
+                'escalated_at': r['reviewed_at'],
+                'notes': r['analyst_notes']
+            } for r in rows]
+            
+            return jsonify({
+                'incidents': incidents, 
+                'count': len(incidents)
+            })
+        except Exception as e:
+            logger.error(f"Get escalated incidents error: {type(e).__name__}")
+            return ResponseHelper.error('Server error', 500)
+        
     def tag_incident(self):
         try:
             data = request.json or {}
