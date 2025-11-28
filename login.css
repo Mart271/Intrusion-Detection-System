@@ -354,7 +354,7 @@ body::before {
 
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 24px;
     margin-bottom: 30px;
 }
@@ -414,6 +414,7 @@ body::before {
 table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 600px;
 }
 
 th {
@@ -445,6 +446,7 @@ tr:hover {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    display: inline-block;
 }
 
 .status-active {
@@ -480,17 +482,43 @@ tr:hover {
     75% { transform: translateX(10px); }
 }
 
+/* ========================================
+   RESPONSIVE DESIGN - MOBILE FRIENDLY
+   ======================================== */
+
+/* Tablet and below (768px) */
 @media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
     .container {
         flex-direction: column;
+        min-height: auto;
+        max-width: 100%;
+        border-radius: 16px;
     }
     
     .left-panel {
-        padding: 40px 30px;
+        padding: 30px 25px;
+        min-height: auto;
+    }
+    
+    .left-panel h1 {
+        font-size: 2.2em;
+    }
+    
+    .left-panel p {
+        font-size: 1em;
+        margin-bottom: 25px;
     }
 
     .right-panel {
-        padding: 40px 30px;
+        padding: 30px 25px;
+    }
+    
+    .login-form h2 {
+        font-size: 1.8em;
     }
 
     .dashboard {
@@ -499,5 +527,335 @@ tr:hover {
 
     .dashboard-grid {
         grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .data-table {
+        overflow-x: auto;
+        padding: 20px;
+    }
+    
+    table {
+        font-size: 14px;
+        min-width: 550px;
+    }
+    
+    th, td {
+        padding: 12px 10px;
+    }
+}
+
+/* Mobile phones (480px and below) */
+@media (max-width: 480px) {
+    body {
+        padding: 0;
+        align-items: flex-start;
+    }
+    
+    .container {
+        border-radius: 0;
+        min-height: 100vh;
+        box-shadow: none;
+    }
+    
+    .left-panel {
+        padding: 25px 20px;
+        min-height: auto;
+    }
+    
+    .left-panel h1 {
+        font-size: 1.8em;
+        margin-bottom: 15px;
+    }
+    
+    .left-panel p {
+        font-size: 0.95em;
+        line-height: 1.6;
+        margin-bottom: 20px;
+    }
+    
+    .feature-list {
+        gap: 12px;
+    }
+    
+    .feature-item {
+        padding: 12px 14px;
+        font-size: 0.9em;
+    }
+    
+    .feature-icon {
+        font-size: 1.2em;
+    }
+    
+    .right-panel {
+        padding: 25px 20px;
+    }
+    
+    .login-form h2 {
+        font-size: 1.6em;
+        margin-bottom: 6px;
+    }
+    
+    .login-form > p {
+        font-size: 0.95em;
+        margin-bottom: 25px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        font-size: 0.9em;
+        margin-bottom: 8px;
+    }
+    
+    .form-group input {
+        padding: 14px 14px 14px 44px;
+        font-size: 16px; /* Prevents zoom on iOS */
+        border-radius: 10px;
+    }
+    
+    .input-icon {
+        left: 14px;
+        font-size: 1em;
+    }
+    
+    .login-btn {
+        padding: 15px;
+        font-size: 16px; /* Prevents zoom on iOS */
+        border-radius: 10px;
+    }
+    
+    .error-message,
+    .success-message {
+        padding: 12px 14px;
+        font-size: 13px;
+        border-radius: 10px;
+    }
+    
+    .attempt-counter {
+        padding: 10px;
+        font-size: 12px;
+        margin-top: 18px;
+    }
+    
+    .test-credentials {
+        padding: 16px;
+        margin-top: 20px;
+        border-radius: 10px;
+    }
+    
+    .test-credentials p {
+        font-size: 0.8em;
+        margin: 3px 0;
+    }
+    
+    /* Dashboard mobile */
+    .dashboard {
+        padding: 15px;
+    }
+    
+    .warning-banner {
+        padding: 16px 18px;
+        margin-bottom: 20px;
+    }
+    
+    .warning-banner h4 {
+        font-size: 1em;
+    }
+    
+    .warning-banner p {
+        font-size: 13px;
+    }
+    
+    .dashboard-header {
+        padding: 25px 20px;
+        flex-direction: column;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.5em;
+    }
+    
+    .dashboard-header p {
+        font-size: 0.9em;
+    }
+    
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .card {
+        padding: 20px;
+    }
+    
+    .card h3 {
+        font-size: 0.95em;
+        gap: 10px;
+    }
+    
+    .card-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+    
+    .card p {
+        font-size: 0.9em;
+    }
+    
+    .data-table {
+        padding: 18px 12px;
+        border-radius: 12px;
+    }
+    
+    .data-table h3 {
+        font-size: 1.1em;
+        margin-bottom: 18px;
+    }
+    
+    table {
+        font-size: 12px;
+        min-width: 500px;
+    }
+    
+    th, td {
+        padding: 10px 8px;
+    }
+    
+    .status-badge {
+        padding: 4px 10px;
+        font-size: 10px;
+    }
+    
+    .logout-btn {
+        padding: 10px 20px;
+        font-size: 0.9em;
+    }
+}
+
+/* Very small phones (360px and below) */
+@media (max-width: 360px) {
+    .left-panel {
+        padding: 20px 15px;
+    }
+    
+    .left-panel h1 {
+        font-size: 1.5em;
+    }
+    
+    .left-panel p {
+        font-size: 0.85em;
+    }
+    
+    .feature-item {
+        padding: 10px 12px;
+        font-size: 0.85em;
+    }
+    
+    .right-panel {
+        padding: 20px 15px;
+    }
+    
+    .login-form h2 {
+        font-size: 1.4em;
+    }
+    
+    .login-form > p {
+        font-size: 0.85em;
+    }
+    
+    .form-group input {
+        padding: 12px 12px 12px 40px;
+    }
+    
+    .input-icon {
+        left: 12px;
+    }
+    
+    .login-btn {
+        padding: 13px;
+    }
+    
+    .test-credentials {
+        padding: 14px;
+    }
+    
+    .test-credentials p {
+        font-size: 0.75em;
+    }
+}
+
+/* Landscape mode for small devices */
+@media (max-height: 600px) and (orientation: landscape) {
+    body {
+        align-items: flex-start;
+        padding: 10px;
+    }
+    
+    .container {
+        min-height: auto;
+        margin: 20px auto;
+        flex-direction: row;
+    }
+    
+    .left-panel {
+        padding: 20px;
+        min-width: 250px;
+    }
+    
+    .left-panel h1 {
+        font-size: 1.5em;
+        margin-bottom: 10px;
+    }
+    
+    .left-panel p {
+        font-size: 0.85em;
+        margin-bottom: 15px;
+    }
+    
+    .feature-list {
+        gap: 8px;
+    }
+    
+    .feature-item {
+        padding: 8px 12px;
+        font-size: 0.8em;
+    }
+    
+    .right-panel {
+        padding: 20px 30px;
+    }
+    
+    .login-form h2 {
+        font-size: 1.4em;
+    }
+    
+    .form-group {
+        margin-bottom: 15px;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .login-btn,
+    .logout-btn {
+        min-height: 44px; /* Larger touch targets */
+    }
+    
+    .form-group input {
+        min-height: 48px; /* Better touch experience */
+    }
+    
+    /* Remove hover effects on touch devices */
+    .login-btn:hover,
+    .logout-btn:hover,
+    .card:hover,
+    .feature-item:hover {
+        transform: none;
     }
 }
